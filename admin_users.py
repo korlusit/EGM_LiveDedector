@@ -11,29 +11,30 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                              QLineEdit, QMessageBox, QSplitter, QProgressBar, QComboBox, QInputDialog)
 from PyQt6.QtGui import QImage, QPixmap, QPainter, QColor
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from database_manager import DatabaseManager
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 USERS_DIR = os.path.join(BASE_DIR, "CAMS", "Users")
 if not os.path.exists(USERS_DIR): os.makedirs(USERS_DIR)
 PROFESSIONAL_THEME = """
-QWidget { background-color: 
-QFrame
-QListWidget { background-color: 
-QListWidget::item { padding: 8px; border-radius: 6px; }
-QListWidget::item:selected { background-color: 
-QLabel { color: white; }
-QLabel
-QLabel
-QLineEdit { background-color: 
-QPushButton { background-color: 
-QPushButton:hover { background-color: 
-QPushButton
-QPushButton
-QPushButton
-QPushButton
-QProgressBar { border: none; background-color: 
-QProgressBar::chunk { background-color: 
-QComboBox { background-color: 
-QComboBox:hover { border: 1px solid 
+QWidget { background-color: #2D2D2D; color: #E0E0E0; font-family: 'Segoe UI', sans-serif; }
+QFrame#SideBar { background-color: #1E1E1E; border-right: 1px solid #333333; }
+QListWidget { background-color: #1E1E1E; border: none; outline: none; }
+QListWidget::item { padding: 8px; border-radius: 6px; color: #E0E0E0; }
+QListWidget::item:selected { background-color: #1A73E8; color: white; }
+QLabel { color: #E0E0E0; }
+QLabel#Header { font-size: 18px; font-weight: bold; padding: 10px; color: #1A73E8; }
+QLabel#Instruction { font-size: 16px; font-weight: bold; color: #4CAF50; margin-bottom: 10px; }
+QLineEdit { background-color: #333333; border: 1px solid #555555; padding: 8px; border-radius: 4px; color: white; }
+QPushButton { background-color: #333333; color: white; border-radius: 6px; padding: 10px; border: 1px solid #555555; }
+QPushButton:hover { background-color: #444444; }
+QPushButton#PrimaryBtn { background-color: #1A73E8; border: none; font-weight: bold; }
+QPushButton#PrimaryBtn:hover { background-color: #1557B0; }
+QPushButton#DeleteBtn { background-color: #D32F2F; border: none; }
+QPushButton#DeleteBtn:hover { background-color: #B71C1C; }
+QProgressBar { border: none; background-color: #333333; height: 10px; border-radius: 5px; text-align: center; }
+QProgressBar::chunk { background-color: #4CAF50; border-radius: 5px; }
+QComboBox { background-color: #333333; border: 1px solid #555555; padding: 5px; border-radius: 4px; color: white; }
+QComboBox:hover { border: 1px solid #1A73E8; }
 """
 POSES = [
     ("CENTER", "Yüzünü Merkeze Tut", (-15, 15), (-15, 15)),
@@ -76,6 +77,7 @@ class FaceIDWorker(QThread):
         self.current_pose_idx = 0
         self.collected_frames = 0
         self.camera_source = camera_source
+        self.db = DatabaseManager()
         providers = ['CUDAExecutionProvider', 'DmlExecutionProvider', 'CPUExecutionProvider']
         self.app = FaceAnalysis(name='buffalo_l', providers=providers)
         self.app.prepare(ctx_id=0, det_size=(640, 640))
@@ -160,7 +162,23 @@ class FaceIDWorker(QThread):
                 self.collected_frames = 0
                 if self.current_pose_idx >= len(POSES):
                     self.register_mode = False
-                    self.finished_registration.emit(True, "KURULUM TAMAMLANDI!")
+                    
+                    faces = self.app.get(frame)
+                    if faces:
+                        embedding = faces[0].embedding
+                        import random
+                        fake_sicil = str(random.randint(10000, 99999))
+                        success, msg = self.db.add_user(fake_sicil, self.target_name, "Memur", "Merkez", embedding)
+                        if success:
+                            print(f"[SUCCESS] User {self.target_name} saved to DB. Sicil: {fake_sicil}")
+                            self.finished_registration.emit(True, f"KAYIT BAŞARILI!\nSicil: {fake_sicil}\nVeritabanına eklendi.")
+                        else:
+                            print(f"[ERROR] DB Save failed: {msg}")
+                            self.finished_registration.emit(False, f"Veritabanı Hatası: {msg}")
+                    else:
+                        print("[ERROR] No face detected in final frame.")
+                        self.finished_registration.emit(False, "HATA: Son karede yüz algılanamadı, kayıt yapılamadı!")
+                    
                     self.pose_feedback.emit("Bitti", 1.0)
                 else:
                     time.sleep(0.5) 
@@ -175,14 +193,7 @@ class FaceIDWorker(QThread):
     def save_frame(self, frame):
         if not self.target_name: return False
         try:
-            user_dir = os.path.join(USERS_DIR, self.target_name)
-            ts = int(time.time() * 1000000)
-            filename = f"{ts}_{self.current_pose_idx}.jpg"
-            path = os.path.join(user_dir, filename)
-            success, im_buf_arr = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
-            if success:
-                im_buf_arr.tofile(path) 
-                if os.path.exists(path): return True
+             return True
         except Exception as e:
             print(f"Save ERROR: {e}")
         return False
@@ -190,11 +201,6 @@ class FaceIDWorker(QThread):
         self.target_name = name
         self.current_pose_idx = 0
         self.collected_frames = 0
-        user_dir = os.path.join(USERS_DIR, name)
-        if os.path.exists(user_dir):
-            try: shutil.rmtree(user_dir)
-            except: pass
-        if not os.path.exists(user_dir): os.makedirs(user_dir)
         self.register_mode = True
     def stop(self):
         self.running = False
@@ -202,11 +208,12 @@ class FaceIDWorker(QThread):
 class AdminApp(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("FACE ID SETUP (PRO)")
+        self.setWindowTitle("EGM CANLI TAKİP")
         self.setStyleSheet(PROFESSIONAL_THEME)
         self.resize(1100, 700)
         self.available_cams = self.check_cameras()
         self.worker = None
+        self.db = DatabaseManager()
         self.init_ui()
         self.start_camera(0)
         self.load_users()
@@ -253,7 +260,7 @@ class AdminApp(QWidget):
         cam_layout = QVBoxLayout(cam_container); cam_layout.setContentsMargins(0,0,0,0)
         self.cam_lbl = QLabel()
         self.cam_lbl.setFixedSize(640, 480)
-        self.cam_lbl.setStyleSheet("background: 
+        self.cam_lbl.setStyleSheet("background: black;")
         cam_layout.addWidget(self.cam_lbl)
         ml.addWidget(cam_container, alignment=Qt.AlignmentFlag.AlignCenter)
         self.prog = QProgressBar(); self.prog.setFixedWidth(400); self.prog.setTextVisible(False)
@@ -292,10 +299,9 @@ class AdminApp(QWidget):
             self.worker = None
     def load_users(self):
         self.user_list.clear()
-        if not os.path.exists(USERS_DIR): return
-        for i in os.listdir(USERS_DIR):
-            if os.path.isdir(os.path.join(USERS_DIR, i)):
-                self.user_list.addItem(i)
+        users = self.db.get_all_users_encodings()
+        for sicil, data in users.items():
+            self.user_list.addItem(f"{data['name']} ({sicil})")
     def update_cam(self, img):
         self.cam_lbl.setPixmap(QPixmap.fromImage(img).scaled(
             self.cam_lbl.size(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
@@ -315,8 +321,10 @@ class AdminApp(QWidget):
     def delete_user(self):
         item = self.user_list.currentItem()
         if item and QMessageBox.question(self, "Sil", "Emin misiniz?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No) == QMessageBox.StandardButton.Yes:
-            try: shutil.rmtree(os.path.join(USERS_DIR, item.text()))
-            except: pass
+            text = item.text()
+            if "(" in text and text.endswith(")"):
+                sicil = text.split("(")[-1].replace(")", "")
+                QMessageBox.information(self, "Bilgi", "Veritabani silme henuz eklenmedi.")
             self.load_users()
     def closeEvent(self, event):
         self.stop_camera()

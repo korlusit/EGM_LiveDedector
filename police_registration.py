@@ -11,14 +11,14 @@ from database_manager import DatabaseManager
 class PoliceRegistrationDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("YENİ POLİS PERSONEL KAYDI") 
+        self.setWindowTitle("EGM CANLI TAKİP") 
         self.resize(500, 600)
         self.setStyleSheet("""
-            QDialog { background-color: 
-            QLabel { font-weight: bold; margin-top: 10px; }
-            QLineEdit, QComboBox { padding: 8px; background-color: 
-            QPushButton { background-color: 
-            QPushButton:hover { background-color: 
+            QDialog { background-color: #F0F2F5; }
+            QLabel { font-weight: bold; margin-top: 10px; color: #333333; }
+            QLineEdit, QComboBox { padding: 8px; background-color: white; border: 1px solid #CCCCCC; border-radius: 4px; }
+            QPushButton { background-color: #333333; color: white; border-radius: 4px; padding: 10px; }
+            QPushButton:hover { background-color: #555555; }
         """)
         self.selected_file = None
         self.db = DatabaseManager()
@@ -42,7 +42,7 @@ class PoliceRegistrationDialog(QDialog):
         l.addWidget(self.inp_unit)
         self.lbl_photo = QLabel("Fotoğraf Seçilmedi")
         self.lbl_photo.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.lbl_photo.setStyleSheet("border: 1px dashed 
+        self.lbl_photo.setStyleSheet("border: 1px dashed #999; background: #EEE;")
         self.lbl_photo.setFixedHeight(150)
         l.addWidget(self.lbl_photo)
         btn_sel = QPushButton("FOTOĞRAF SEÇ")
@@ -50,7 +50,7 @@ class PoliceRegistrationDialog(QDialog):
         l.addWidget(btn_sel)
         btn_save = QPushButton("KAYDET")
         btn_save.clicked.connect(self.save_user)
-        btn_save.setStyleSheet("background-color: 
+        btn_save.setStyleSheet("background-color: #1A73E8; color: white; font-weight: bold;")
         l.addWidget(btn_save)
     def select_photo(self):
         fname, _ = QFileDialog.getOpenFileName(self, "Fotoğraf Seç", "", "Resimler (*.jpg *.png *.jpeg)")

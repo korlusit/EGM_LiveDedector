@@ -3,7 +3,6 @@ from PyQt6 import QtWidgets, QtGui, QtCore
 from PyQt6.QtWidgets import QColorDialog, QMessageBox, QGraphicsDropShadowEffect, QPushButton, QVBoxLayout
 import subprocess
 import os
-from face import AdminDialog, RecordsDialog
 from egm_ui import Ui_MainWindow
 class EGMSistem(QtWidgets.QMainWindow):
     def __init__(self, user_name="Admin"):
@@ -13,7 +12,7 @@ class EGMSistem(QtWidgets.QMainWindow):
         self.ui.label_4.setText("PLAKA TANIMA SİSTEMİ (PTS)")
         self.ui.label_5.setText("YÜZ TANIMA SİSTEMİ (GBT)")
         self.ui.cardTutanak.hide()
-        self.setWindowTitle("E.G.M - Entegre Güvenlik Yönetim Sistemi v3.0")
+        self.setWindowTitle("EGM CANLI TAKİP")
         display_name = user_name
         if "_" in user_name:
             parts = user_name.split("_")
@@ -50,14 +49,6 @@ class EGMSistem(QtWidgets.QMainWindow):
             self.btnYuzTanitma.clicked.connect(self.open_add_person)
             if index >= 0: layout.insertWidget(index + 1, self.btnYuzTanitma)
             else: layout.addWidget(self.btnYuzTanitma)
-            self.btnSucluListesi = QtWidgets.QPushButton(self.ui.sidebarFrame)
-            self.btnSucluListesi.setText("  Suçlu Listesi")
-            self.btnSucluListesi.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
-            self.btnSucluListesi.setProperty("class", "sidebarBtn") 
-            self.btnSucluListesi.setObjectName("btnSucluListesi")
-            self.btnSucluListesi.clicked.connect(self.open_records)
-            if index >= 0: layout.insertWidget(index + 2, self.btnSucluListesi)
-            else: layout.addWidget(self.btnSucluListesi)
             self.ui.sidebarFrame.style().unpolish(self.ui.sidebarFrame)
             self.ui.sidebarFrame.style().polish(self.ui.sidebarFrame)
         except Exception as e:
@@ -79,11 +70,12 @@ class EGMSistem(QtWidgets.QMainWindow):
             subprocess.Popen([sys.executable, script_path], creationflags=flags)
         except Exception as e: QMessageBox.critical(self, "Hata", str(e))
     def open_add_person(self):
-        from police_registration import PoliceRegistrationDialog
-        try: PoliceRegistrationDialog(self).exec()
-        except Exception as e: QMessageBox.critical(self, "Hata", str(e))
-    def open_records(self):
-        try: RecordsDialog(self).exec()
+        try: 
+            flags = 0
+            if os.name == 'nt': flags = 0x08000000 
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            script_path = os.path.join(base_dir, 'admin_users.py')
+            subprocess.Popen([sys.executable, script_path], creationflags=flags)
         except Exception as e: QMessageBox.critical(self, "Hata", str(e))
     def efektleri_uygula(self):
         for card in [self.ui.cardPTS, self.ui.cardGBT, self.ui.cardTutanak, self.ui.profileDataCard, self.ui.adminDataCard]:
@@ -122,11 +114,11 @@ class EGMSistem(QtWidgets.QMainWindow):
     def sidebar_renk_degistir(self):
         color = QColorDialog.getColor()
         if color.isValid():
-            self.ui.sidebarFrame.setStyleSheet(f"
+            self.ui.sidebarFrame.setStyleSheet(f"background-color: {color.name()};")
     def ana_renk_degistir(self):
         color = QColorDialog.getColor()
         if color.isValid():
-            self.ui.mainContentWidget.setStyleSheet(f"
+            self.ui.mainContentWidget.setStyleSheet(f"background-color: {color.name()};")
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     font = QtGui.QFont("Segoe UI", 10)

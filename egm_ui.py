@@ -3,189 +3,185 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1280, 850)
-        MainWindow.setStyleSheet("/* --- MODERN KOYU TEMA --- */\n"
-"QMainWindow {\n"
-"    background-color: 
-"    color: 
-"}\n"
-"\n"
-"/* --- SOL SIDEBAR --- */\n"
-"
-"    background-color: 
-"    border-right: 1px solid 
-"}\n"
-"\n"
-"
-"    color: 
-"    font-family: \'Segoe UI\', sans-serif;\n"
-"    font-weight: 800;\n"
-"    font-size: 22px;\n"
-"    letter-spacing: 1px;\n"
-"    margin-top: 15px;\n"
-"    margin-bottom: 20px;\n"
-"}\n"
-"\n"
-"/* Sidebar Butonları */\n"
-"QPushButton.sidebarBtn {\n"
-"    background-color: transparent;\n"
-"    color: 
-"    text-align: left;\n"
-"    padding: 12px 25px;\n"
-"    border: none;\n"
-"    border-radius: 12px;\n"
-"    font-size: 15px;\n"
-"    font-weight: 600;\n"
-"    margin: 4px 15px;\n"
-"}\n"
-"\n"
-"QPushButton.sidebarBtn:hover {\n"
-"    background-color: 
-"    color: 
-"    padding-left: 30px; /* Hafif kayma efekti */\n"
-"}\n"
-"\n"
-"QPushButton.sidebarBtn:pressed {\n"
-"    background-color: 
-"    color: white;\n"
-"}\n"
-"\n"
-"/* --- ANA İÇERİK ALANI --- */\n"
-"
-"    background-color: 
-"}\n"
-"\n"
-"/* Bölüm Başlıkları */\n"
-"QLabel.pageHeader {\n"
-"    font-size: 28px;\n"
-"    font-weight: bold;\n"
-"    color: 
-"    margin-bottom: 20px;\n"
-"}\n"
-"\n"
-"/* --- KART TASARIMLARI (WATERMARK İKONLU) --- */\n"
-"QFrame.cardFrame {\n"
-"    background-color: 
-"    border-radius: 20px;\n"
-"    border: 1px solid 
-"    /* İkonlar aşağıda ID bazlı tanımlanacak */\n"
-"}\n"
-"\n"
-"QFrame.cardFrame:hover {\n"
-"    background-color: 
-"    border: 1px solid 
-"    margin-top: -5px; /* Yukarı kalkma efekti */\n"
-"}\n"
-"\n"
-"QLabel.cardTitle {\n"
-"    font-size: 24px;\n"
-"    font-weight: 800;\n"
-"    color: 
-"    background: transparent;\n"
-"}\n"
-"\n"
-"QLabel.cardDesc {\n"
-"    color: 
-"    font-size: 14px;\n"
-"    background: transparent;\n"
-"    margin-top: 10px;\n"
-"}\n"
-"\n"
-"QPushButton.cardActionBtn {\n"
-"    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 
-"    color: white;\n"
-"    border-radius: 10px;\n"
-"    font-weight: bold;\n"
-"    font-size: 14px;\n"
-"    padding: 12px;\n"
-"    border: none;\n"
-"    margin-top: 20px;\n"
-"}\n"
-"\n"
-"QPushButton.cardActionBtn:hover {\n"
-"    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 
-"}\n"
-"\n"
-"/* --- KARTLARA ÖZEL WATERMARK İKONLARI --- \n"
-"   Not: Bu URL\'ler örnek amaçlıdır. Gerçek projede yerel dosyalar (.qrc) kullanmak daha iyidir.\n"
-"   background-size: 120px; ile ikon boyutu ayarlanıyor, sağ üstte duruyor.\n"
-"*/\n"
-"
-"    background-image: url(\'https://cdn-icons-png.flaticon.com/512/2554/2554933.png\');\n"
-"    background-repeat: no-repeat;\n"
-"    background-position: right 20px top 20px;\n"
-"    background-size: 140px;\n"
-"}\n"
-"\n"
-"
-"    background-image: url(\'https://cdn-icons-png.flaticon.com/512/921/921586.png\');\n"
-"    background-repeat: no-repeat;\n"
-"    background-position: right 20px top 20px;\n"
-"    background-size: 140px;\n"
-"}\n"
-"\n"
-"
-"    background-image: url(\'https://cdn-icons-png.flaticon.com/512/2991/2991108.png\');\n"
-"    background-repeat: no-repeat;\n"
-"    background-position: right 20px top 20px;\n"
-"    background-size: 140px;\n"
-"}\n"
-"\n"
-"/* --- PROFİL VE ADMIN FORMLARI --- */\n"
-"QFrame.dataCard {\n"
-"    background-color: 
-"    border-radius: 15px;\n"
-"    padding: 30px;\n"
-"}\n"
-"\n"
-"QLabel.formLabel {\n"
-"    font-size: 16px;\n"
-"    font-weight: 600;\n"
-"    color: 
-"}\n"
-"\n"
-"QLabel.formData {\n"
-"    font-size: 18px;\n"
-"    color: 
-"    font-weight: 500;\n"
-"    padding: 5px;\n"
-"    border-bottom: 1px solid 
-"}\n"
-"\n"
-"QLineEdit.adminInput {\n"
-"    background-color: 
-"    border: 2px solid 
-"    border-radius: 8px;\n"
-"    padding: 12px;\n"
-"    font-size: 16px;\n"
-"    color: 
-"}\n"
-"\n"
-"QLineEdit.adminInput:focus {\n"
-"    border: 2px solid 
-"}\n"
-"\n"
-"QPushButton.saveBtn {\n"
-"    background-color: 
-"    color: white;\n"
-"    font-size: 16px;\n"
-"    font-weight: bold;\n"
-"    padding: 15px;\n"
-"    border-radius: 10px;\n"
-"}\n"
-"QPushButton.saveBtn:hover { background-color: 
-"\n"
-"/* Ayarlar Renk Butonları */\n"
-"QPushButton.colorBtn {\n"
-"    padding: 20px;\n"
-"    border-radius: 15px;\n"
-"    font-size: 16px;\n"
-"    font-weight: bold;\n"
-"    background-color: 
-"    color: white;\n"
-"    border: 2px solid 
-"    text-align: center;\n"
-"}\n"
-"")
+        MainWindow.setStyleSheet("""
+/* --- MODERN KOYU TEMA --- */
+QMainWindow {
+    background-color: #2b2b2b;
+    color: #ffffff;
+}
+
+/* --- SOL SIDEBAR --- */
+    background-color: #1e1e1e;
+    border-right: 1px solid #444444;
+}
+
+    color: #4da3ff;
+    font-family: 'Segoe UI', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: 1px;
+    margin-top: 15px;
+    margin-bottom: 20px;
+}
+
+/* Sidebar Butonları */
+QPushButton.sidebarBtn {
+    background-color: transparent;
+    color: #e0e0e0;
+    text-align: left;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    margin: 4px 15px;
+}
+
+QPushButton.sidebarBtn:hover {
+    background-color: #333333;
+    color: #4da3ff;
+    padding-left: 30px; /* Hafif kayma efekti */
+}
+
+QPushButton.sidebarBtn:pressed {
+    background-color: #444444;
+    color: #8ab4f8;
+}
+
+/* --- ANA İÇERİK ALANI --- */
+    background-color: #2b2b2b;
+}
+
+/* Bölüm Başlıkları */
+QLabel.pageHeader {
+    font-size: 28px;
+    font-weight: bold;
+    color: #e0e0e0;
+    margin-bottom: 20px;
+}
+
+/* --- KART TASARIMLARI (WATERMARK İKONLU) --- */
+QFrame.cardFrame {
+    background-color: #3d3d3d;
+    border-radius: 20px;
+    border: 1px solid #555555;
+    /* İkonlar aşağıda ID bazlı tanımlanacak */
+}
+
+QFrame.cardFrame:hover {
+    background-color: #444444;
+    border: 1px solid #4da3ff;
+    margin-top: -5px; /* Yukarı kalkma efekti */
+}
+
+QLabel.cardTitle {
+    font-size: 24px;
+    font-weight: 800;
+    color: #ffffff;
+    background: transparent;
+}
+
+QLabel.cardDesc {
+    color: #aaaaaa;
+    font-size: 14px;
+    background: transparent;
+    margin-top: 10px;
+}
+
+QPushButton.cardActionBtn {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 #1A73E8, stop:1 #287AE6);
+    color: white;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 14px;
+    padding: 12px;
+    border: none;
+    margin-top: 20px;
+}
+
+QPushButton.cardActionBtn:hover {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 #1557B0, stop:1 #174EA6);
+}
+
+/* --- KARTLARA ÖZEL WATERMARK İKONLARI --- 
+   Not: Bu URL'ler örnek amaçlıdır. Gerçek projede yerel dosyalar (.qrc) kullanmak daha iyidir.
+   background-size: 120px; ile ikon boyutu ayarlanıyor, sağ üstte duruyor.
+*/
+    background-image: url('https://cdn-icons-png.flaticon.com/512/2554/2554933.png');
+    background-repeat: no-repeat;
+    background-position: right 20px top 20px;
+    background-size: 140px;
+}
+
+    background-image: url('https://cdn-icons-png.flaticon.com/512/921/921586.png');
+    background-repeat: no-repeat;
+    background-position: right 20px top 20px;
+    background-size: 140px;
+}
+
+    background-image: url('https://cdn-icons-png.flaticon.com/512/2991/2991108.png');
+    background-repeat: no-repeat;
+    background-position: right 20px top 20px;
+    background-size: 140px;
+}
+
+/* --- PROFİL VE ADMIN FORMLARI --- */
+QFrame.dataCard {
+    background-color: #3d3d3d;
+    border-radius: 15px;
+    padding: 30px;
+}
+
+QLabel.formLabel {
+    font-size: 16px;
+    font-weight: 600;
+    color: #aaaaaa;
+}
+
+QLabel.formData {
+    font-size: 18px;
+    color: #ffffff;
+    font-weight: 500;
+    padding: 5px;
+    border-bottom: 1px solid #E0E0E0;
+}
+
+QLineEdit.adminInput {
+    background-color: #444444;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 16px;
+    color: #ffffff;
+}
+
+QLineEdit.adminInput:focus {
+    border: 2px solid #4da3ff;
+    background-color: #505050;
+}
+
+QPushButton.saveBtn {
+    background-color: #34A853;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 15px;
+    border-radius: 10px;
+}
+QPushButton.saveBtn:hover { background-color: #2D8E47; }
+
+/* Ayarlar Renk Butonları */
+QPushButton.colorBtn {
+    padding: 20px;
+    border-radius: 15px;
+    font-size: 16px;
+    font-weight: bold;
+    background-color: #3d3d3d;
+    color: #ffffff;
+    border: 2px solid #555555;
+    text-align: center;
+}
+""")
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.mainLayout = QtWidgets.QHBoxLayout(self.centralwidget)
@@ -202,7 +198,7 @@ class Ui_MainWindow(object):
         self.sidebarLayout.setObjectName("sidebarLayout")
         self.labelImagePlace = QtWidgets.QLabel(parent=self.sidebarFrame)
         self.labelImagePlace.setMinimumSize(QtCore.QSize(0, 180))
-        self.labelImagePlace.setStyleSheet("border: 3px dashed 
+        self.labelImagePlace.setStyleSheet("border: 3px dashed #555555; background-color: #3d3d3d;")
         self.labelImagePlace.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.labelImagePlace.setObjectName("labelImagePlace")
         self.sidebarLayout.addWidget(self.labelImagePlace)
@@ -231,7 +227,7 @@ class Ui_MainWindow(object):
         spacerItem1 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Expanding)
         self.sidebarLayout.addItem(spacerItem1)
         self.labelVersion = QtWidgets.QLabel(parent=self.sidebarFrame)
-        self.labelVersion.setStyleSheet("color: 
+        self.labelVersion.setStyleSheet("color: #CCCCCC; font-size: 12px;")
         self.labelVersion.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.labelVersion.setObjectName("labelVersion")
         self.sidebarLayout.addWidget(self.labelVersion)
@@ -442,9 +438,10 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
         self.mainStack.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "E.G.M - Entegre Güvenlik Yönetim Sistemi"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "EGM CANLI TAKİP"))
         self.labelImagePlace.setText(_translate("MainWindow", "RESİM ALANI"))
         self.labelTitle.setText(_translate("MainWindow", "E.G.M UYGULAMA"))
         self.btnAnaSayfa.setProperty("class", _translate("MainWindow", "sidebarBtn"))

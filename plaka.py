@@ -17,12 +17,13 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
 from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QMutex
 import torch
+from database_manager import DatabaseManager
 from ultralytics import YOLO
 import easyocr
 CONFIDENCE_YOLO = 0.50
 SIMILARITY_THRESHOLD = 0.80
 DET_SIZE = (640, 640)
-DB_PATH = "egm_plate_database.db"
+DB_PATH = "unified_egm.db"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FACECAM_DIR = os.path.join(BASE_DIR, "CAMS", "PlateCam") 
 SNAPSHOTS_DIR = os.path.join(BASE_DIR, "CAMS", "Snapshots")
@@ -36,199 +37,73 @@ def put_text_utf8(img, text, pos, color, font_size=20):
     rgb_color = (color[2], color[1], color[0])
     draw.text(pos, text, font=font, fill=rgb_color)
     return cv2.cvtColor(np.array(img_pil), cv2.COLOR_RGB2BGR)
-def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("""CREATE TABLE IF NOT EXISTS plates (
-        id INTEGER PRIMARY KEY AUTOINCREMENT, plate_number TEXT UNIQUE, 
-        owner TEXT, status TEXT, description TEXT)""")
-    conn.commit()
-    conn.close()
-init_db()
+
 PROFESSIONAL_THEME = """
-QWidget { background-color: 
-QFrame
-    background-color: 
-    border: 1px solid 
+QWidget { background-color: #2D2D2D; color: #E0E0E0; font-family: 'Segoe UI', sans-serif; }
+QFrame {
+    background-color: #1E1E1E;
+    border: 1px solid #333333;
     border-radius: 8px; 
     padding: 10px; 
 }
-QFrame
-    color: 
+QFrame#LeftPanel, QFrame#SidePanel {
+    background-color: #1E1E1E;
+}
+QLabel {
+    color: #E0E0E0;
     font-weight: bold;
 }
-QLabel
-    background-color: 
-    border: 2px solid 
+QLabel#VideoLabel {
+    background-color: #000000;
+    border: 2px solid #1A73E8;
     border-radius: 8px; 
 }
-QLabel
-    color: 
-    font-weight: bold; 
-    font-size: 28px; 
-    background-color: transparent;
-    padding: 5px;
+QLabel#SafeTitle {
+    color: #4CAF50;
+    font-size: 18px;
+    font-weight: bold;
 }
 QGroupBox { 
-    border: 1px solid 
+    border: 1px solid #555555;
     margin-top: 10px; 
 }
 QLineEdit, QTextEdit, QComboBox { 
-    background-color: 
-    border: 1px solid 
+    background-color: #333333;
+    border: 1px solid #555555;
     border-radius: 4px;
     padding: 6px; 
     color: white; 
 }
 QListWidget {
-    background-color: 
-    color: 
-    border: 1px solid 
+    background-color: #1E1E1E;
+    color: #E0E0E0;
+    border: 1px solid #333333;
     border-radius: 6px;
     padding: 5px;
 }
 QListWidget::item:selected {
-    background-color: 
+    background-color: #1A73E8;
     color: white;
 }
 QPushButton { 
-    background-color: 
+    background-color: #333333;
     color: white; 
     border-radius: 6px; 
     padding: 12px; 
     font-weight: bold; 
     font-size: 14px;
-    border: none;
+    border: 1px solid #555555;
 }
-QPushButton:hover { background-color: 
-QPushButton:pressed { background-color: 
-QPushButton:disabled { background-color: 
-QPushButton
-QPushButton
-QPushButton
-QSlider::groove:horizontal { border: 1px solid 
-QSlider::handle:horizontal { background: 
+QPushButton:hover { background-color: #444444; }
+QPushButton:pressed { background-color: #222222; }
+QPushButton:disabled { background-color: #555555; }
+QPushButton#PlayBtn { background-color: #1A73E8; border: none; }
+QPushButton#StopBtn { background-color: #D32F2F; border: none; }
+QPushButton#AdminBtn { background-color: #FFA000; color: black; border: none; }
+QSlider::groove:horizontal { border: 1px solid #999999; height: 8px; background: #333333; margin: 2px 0; border-radius: 4px; }
+QSlider::handle:horizontal { background: #1A73E8; border: 1px solid #1A73E8; width: 18px; height: 18px; margin: -6px 0; border-radius: 9px; }
 """
-class DatabaseHandler:
-    def __init__(self, db_path):
-        self.db_path = db_path
-        self.mutex = QMutex()
-    def get_plate_info(self, plate):
-        self.mutex.lock()
-        info = None
-        try:
-            conn = sqlite3.connect(self.db_path)
-            c = conn.cursor()
-            c.execute("SELECT owner, status, description FROM plates WHERE plate_number=?", (plate,))
-            r = c.fetchone()
-            conn.close()
-            if r: 
-                info = {"owner": r[0], "status": r[1], "description": r[2]}
-            else:
-                info = {"owner": "Bilinmiyor", "status": "TEMIZ", "description": "Kayit yok"}
-        except: pass
-        self.mutex.unlock()
-        return info
-    def add_wanted_plate(self, plate, owner, status, desc):
-        self.mutex.lock()
-        try:
-            conn = sqlite3.connect(self.db_path)
-            c = conn.cursor()
-            c.execute("INSERT OR REPLACE INTO plates (plate_number, owner, status, description) VALUES (?,?,?,?)",
-                      (plate, owner, status, desc))
-            conn.commit()
-            conn.close()
-        except: pass
-        self.mutex.unlock()
-    def get_all_plates(self):
-        self.mutex.lock(); data = []
-        try:
-            conn = sqlite3.connect(self.db_path); c = conn.cursor()
-            c.execute("SELECT plate_number, owner, status, description FROM plates")
-            data = c.fetchall(); conn.close()
-        except: pass
-        self.mutex.unlock(); return data
-    def delete_plate(self, plate):
-        self.mutex.lock()
-        try:
-            conn = sqlite3.connect(self.db_path); c = conn.cursor()
-            c.execute("DELETE FROM plates WHERE plate_number=?", (plate,))
-            conn.commit(); conn.close()
-        except: pass
-        self.mutex.unlock()
-class RecordsDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("PLAKA KAYITLARI YONET")
-        self.resize(800, 600)
-        self.setStyleSheet(PROFESSIONAL_THEME)
-        self.db = DatabaseHandler(DB_PATH)
-        self.init_ui()
-    def init_ui(self):
-        l = QVBoxLayout(self)
-        self.table = QTableWidget()
-        self.table.setColumnCount(4)
-        self.table.setHorizontalHeaderLabels(["Plaka", "Sahip", "Durum", "Aciklama"])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        l.addWidget(self.table)
-        btn_del = QPushButton("SECILI PLAKAYI SIL")
-        btn_del.clicked.connect(self.delete_rec)
-        btn_del.setStyleSheet("background-color: 
-        l.addWidget(btn_del)
-        self.load_data()
-    def load_data(self):
-        self.table.setRowCount(0)
-        data = self.db.get_all_plates()
-        for i, row in enumerate(data):
-            self.table.insertRow(i)
-            self.table.setItem(i, 0, QTableWidgetItem(str(row[0])))
-            self.table.setItem(i, 1, QTableWidgetItem(str(row[1])))
-            self.table.setItem(i, 2, QTableWidgetItem(str(row[2])))
-            self.table.setItem(i, 3, QTableWidgetItem(str(row[3])))
-    def delete_rec(self):
-        r = self.table.currentRow()
-        if r < 0: return
-        plate = self.table.item(r, 0).text()
-        res = QMessageBox.question(self, "Onay", f"{plate} plakasini silmek istediginize emin misiniz?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-        if res == QMessageBox.StandardButton.Yes:
-            self.db.delete_plate(plate)
-            self.load_data()
-            QMessageBox.information(self, "Bilgi", "Plaka silindi.")
-class AdminDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("EGM PLAKA VERI GIRISI")
-        self.resize(500, 600)
-        self.setStyleSheet(PROFESSIONAL_THEME)
-        self.init_ui()
-    def init_ui(self):
-        l = QVBoxLayout(self)
-        l.addWidget(QLabel("Plaka No (Örn: 34ABC123):"))
-        self.inp_plate = QTextEdit(); self.inp_plate.setFixedHeight(40); l.addWidget(self.inp_plate)
-        l.addWidget(QLabel("Araç Sahibi / Durum:"))
-        self.inp_owner = QTextEdit(); self.inp_owner.setFixedHeight(40); l.addWidget(self.inp_owner)
-        l.addWidget(QLabel("Durum Seç:"))
-        self.combo_status = QComboBox(); self.combo_status.addItems(["CALINTI", "ARANIYOR", "HACIZLI", "TEMIZ"])
-        l.addWidget(self.combo_status)
-        l.addWidget(QLabel("Açıklama:"))
-        self.inp_desc = QTextEdit(); self.inp_desc.setFixedHeight(80); l.addWidget(self.inp_desc)
-        btn_save = QPushButton("KAYDET")
-        btn_save.clicked.connect(self.save)
-        l.addWidget(btn_save)
-    def save(self):
-        plate = self.inp_plate.toPlainText().strip().upper()
-        owner = self.inp_owner.toPlainText().strip()
-        status = self.combo_status.currentText()
-        desc = self.inp_desc.toPlainText()
-        if not plate: 
-            QMessageBox.warning(self, "Eksik Bilgi", "Lutfen Plaka Numarasi giriniz.")
-            return
-        db = DatabaseHandler(DB_PATH)
-        db.add_wanted_plate(plate, owner, status, desc)
-        QMessageBox.information(self, "Bilgi", f"{plate} plakasi sisteme kaydedildi.")
-        self.accept()
+
 class VideoWorker(QThread):
     change_pixmap = pyqtSignal(QImage)
     plate_found = pyqtSignal(dict, np.ndarray, str) 
@@ -242,7 +117,7 @@ class VideoWorker(QThread):
         self.running = True
         self.paused = False
         self.seek_req = -1
-        self.db = DatabaseHandler(DB_PATH)
+        self.db = DatabaseManager()
         self.confirmed_plates = set()
         self.active_tracks = {}
         self.frame_count = 0
@@ -255,8 +130,12 @@ class VideoWorker(QThread):
             device = 'cuda' if torch.cuda.is_available() else 'cpu'
             self.log_msg.emit(f"Islem Birimi: {device.upper()}")
             self.yolo = YOLO('yolo11n.pt').to(device)
-            try: self.plate_model = YOLO('plate_model.pt').to(device)
-            except: self.plate_model = None; self.log_msg.emit("Plaka modeli yok, yedek mod devrede.")
+            try: 
+                model_path = os.path.join(BASE_DIR, 'plate_model.pt')
+                self.plate_model = YOLO(model_path).to(device)
+            except Exception as e: 
+                self.plate_model = None
+                self.log_msg.emit(f"Plaka modeli hatasi: {e}")
             self.reader = easyocr.Reader(['en'], gpu=(device=='cuda'))
             cap = cv2.VideoCapture(self.vpath)
             if not cap.isOpened():
@@ -315,7 +194,11 @@ class VideoWorker(QThread):
                                             track["plate"] = clean
                                             track["confirmed"] = True
                                             self.active_tracks[obj_id] = track
-                                            info = self.db.get_plate_info(clean)
+                                            row = self.db.check_plate(clean)
+                                            info = {"owner": "Bilinmiyor", "status": "TEMIZ", "description": "Kayit yok"}
+                                            if row:
+                                                 info = {"owner": row[2], "status": row[3], "description": row[4]}
+                                            
                                             self.plate_found.emit(info, vehicle_crop.copy(), clean)
                                             break
                             except: pass
@@ -344,7 +227,7 @@ class VideoWorker(QThread):
 class PlateApp(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("EGM PLAKA TANIMA SISTEMI (V2 PRO)")
+        self.setWindowTitle("EGM CANLI TAKİP")
         self.resize(1500, 950)
         self.setStyleSheet(PROFESSIONAL_THEME)
         self.curr_vid = None
@@ -358,14 +241,10 @@ class PlateApp(QWidget):
         left_frame = QFrame()
         left_frame.setObjectName("LeftPanel")
         left = QVBoxLayout(left_frame)
-        btn_adm = QPushButton("PLAKA VERI GIRISI"); btn_adm.clicked.connect(self.open_admin); btn_adm.setFixedHeight(50); btn_adm.setObjectName("AdminBtn")
-        left.addWidget(btn_adm)
-        btn_recs = QPushButton("KAYITLARI YONET"); btn_recs.clicked.connect(self.open_records); btn_recs.setFixedHeight(40); btn_recs.setStyleSheet("background-color: 
-        left.addWidget(btn_recs)
         f_lay = QHBoxLayout()
         self.lbl_path = QLabel("Varsayılan Klasör"); self.lbl_path.setStyleSheet("color:gray; font-size:10px;")
         btn_dir = QPushButton("KLASÖR SEÇ"); btn_dir.clicked.connect(self.select_folder)
-        btn_dir.setStyleSheet("background-color:
+        btn_dir.setStyleSheet("background-color: #333333; color: white;")
         f_lay.addWidget(btn_dir)
         left.addLayout(f_lay); left.addWidget(self.lbl_path)
         left.addWidget(QLabel("KAMERA / VIDEO LISTESI"))
@@ -394,9 +273,9 @@ class PlateApp(QWidget):
         right_frame = QFrame(); right_frame.setFixedWidth(380); right_frame.setObjectName("SidePanel")
         right = QVBoxLayout(right_frame)
         right.addWidget(QLabel("TESPIT EDILEN PLAKA"))
-        self.crim_img = QLabel(); self.crim_img.setFixedSize(320, 200); self.crim_img.setStyleSheet("background:black; border:2px solid 
+        self.crim_img = QLabel(); self.crim_img.setFixedSize(320, 200); self.crim_img.setStyleSheet("background:black; border:2px solid #555;")
         self.crim_img.setAlignment(Qt.AlignmentFlag.AlignCenter); right.addWidget(self.crim_img, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.lbl_plate = QLabel("-"); self.lbl_plate.setStyleSheet("font-size:32px; font-weight:bold; color: 
+        self.lbl_plate = QLabel("-"); self.lbl_plate.setStyleSheet("font-size:32px; font-weight:bold; color: white;")
         self.lbl_stat = QLabel("DURUM: -"); self.lbl_stat.setObjectName("SafeTitle")
         self.lbl_owner = QLabel("Sahip: -")
         self.txt_desc = QTextEdit(); self.txt_desc.setReadOnly(True)
@@ -453,10 +332,6 @@ class PlateApp(QWidget):
         if self.is_dragging and self.worker:
             self.worker.set_seek(self.slider.value())
     def on_release(self): self.is_dragging = False
-    def open_admin(self):
-        if AdminDialog(self).exec(): self.log("Veritabani guncellendi.")
-    def open_records(self):
-        RecordsDialog(self).exec()
     def stop(self): 
         if self.worker: self.worker.kill()
     def on_fin(self):
@@ -471,7 +346,7 @@ class PlateApp(QWidget):
         self.lbl_stat.setText(f"DURUM: {inf['status']}")
         self.txt_desc.setText(inf['description'])
         is_safe = inf['status'] == "TEMIZ"
-        color = "
+        color = "green" if is_safe else "red"
         self.lbl_stat.setStyleSheet(f"font-size:18px; font-weight:bold; color: {color};")
         self.det_list.insertItem(0, f"{plate_text} - {inf['status']}")
     def log(self, t): self.log_box.append(f">> {t}")

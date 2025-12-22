@@ -5,7 +5,8 @@ import numpy as np
 import pickle
 class DatabaseManager:
     def __init__(self, db_name="unified_egm.db"):
-        self.db_name = db_name
+        self.BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        self.db_name = os.path.join(self.BASE_DIR, db_name)
         self.init_db()
     def get_connection(self):
         return sqlite3.connect(self.db_name)
@@ -95,16 +96,22 @@ class DatabaseManager:
         row = cursor.fetchone()
         conn.close()
         return row
-    def add_criminal(self, name, crime_type, status, notes, face_encoding=None, photo_path=None, tc_no=None):
-        conn = self.get_connection()
-        cursor = conn.cursor()
-        encoding_blob = pickle.dumps(face_encoding) if face_encoding is not None else None
-        cursor.execute('''
-            INSERT INTO criminals (name, crime_type, status, notes, face_encoding, photo_path, tc_no)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', (name, crime_type, status, notes, encoding_blob, photo_path, tc_no))
-        conn.commit()
-        conn.close()
+    def add_criminal(self, name, crime_type, status, notes, face_encoding=None, photo_path=None, unique_id=None):
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            encoding_blob = pickle.dumps(face_encoding) if face_encoding is not None else None
+            
+            cursor.execute('''
+                INSERT INTO criminals (name, crime_type, status, notes, face_encoding, photo_path, unique_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (name, crime_type, status, notes, encoding_blob, photo_path, unique_id))
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            print(f"Error adding criminal: {e}")
+            return False
     def get_all_criminals(self):
         conn = self.get_connection()
         cursor = conn.cursor()

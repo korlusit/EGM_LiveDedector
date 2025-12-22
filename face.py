@@ -19,11 +19,9 @@ from PyQt6.QtGui import QImage, QPixmap, QIcon, QImageReader
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QMutex, QSize
 SIMILARITY_THRESHOLD = 0.45
 DET_SIZE = (640, 640)
-DB_PATH = "egm_database.db"
+DB_PATH = "unified_egm.db"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PERSONS_DIR = os.path.join(BASE_DIR, "CAMS", "Persons") 
 FACECAM_DIR = os.path.join(BASE_DIR, "CAMS", "FaceCam")
-if not os.path.exists(PERSONS_DIR): os.makedirs(PERSONS_DIR)
 if not os.path.exists(FACECAM_DIR): os.makedirs(FACECAM_DIR)
 def put_text_utf8(img, text, pos, color, font_size=20):
     img_pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
@@ -33,188 +31,62 @@ def put_text_utf8(img, text, pos, color, font_size=20):
     rgb_color = (color[2], color[1], color[0])
     draw.text(pos, text, font=font, fill=rgb_color)
     return cv2.cvtColor(np.array(img_pil), cv2.COLOR_RGB2BGR)
-def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("""CREATE TABLE IF NOT EXISTS persons (
-        id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE, full_name TEXT,
-        is_criminal INTEGER, crime_type TEXT, description TEXT)""")
-    conn.commit(); conn.close()
-init_db()
+
 PROFESSIONAL_THEME = """
-QWidget { background-color: 
-QFrame
-    background-color: 
-    border: 1px solid 
+QWidget { background-color: #2D2D2D; color: #E0E0E0; font-family: 'Segoe UI', sans-serif; }
+QFrame {
+    background-color: #1E1E1E;
+    border: 1px solid #333333;
     border-radius: 8px; 
     padding: 10px; 
 }
-QFrame
-    color: 
+QFrame#LeftPanel, QFrame#SidePanel {
+    background-color: #1E1E1E;
+}
+QLabel {
+    color: #E0E0E0;
     font-weight: bold;
 }
-QLabel
-    background-color: 
-    border: 2px solid 
+QLabel#VideoLabel {
+    background-color: #000000;
+    border: 2px solid #1A73E8;
     border-radius: 8px; 
 }
 QListWidget {
-    background-color: 
-    color: 
-    border: 1px solid 
+    background-color: #1E1E1E;
+    color: #E0E0E0;
+    border: 1px solid #333333;
     border-radius: 6px;
     padding: 5px;
 }
 QListWidget::item {
-    border-bottom: 1px solid 
+    border-bottom: 1px solid #333333;
     padding: 5px;
 }
 QListWidget::item:selected {
-    background-color: 
+    background-color: #1A73E8;
     color: white;
 }
 QPushButton { 
-    background-color: 
+    background-color: #333333;
     color: white; 
     border-radius: 6px; 
     padding: 12px; 
     font-weight: bold; 
     font-size: 14px;
-    border: none;
+    border: 1px solid #555555;
 }
-QPushButton:hover { background-color: 
-QPushButton:pressed { background-color: 
-QPushButton:disabled { background-color: 
-QPushButton
-QPushButton
-QPushButton
-QSlider::groove:horizontal { border: 1px solid 
-QSlider::handle:horizontal { background: 
+QPushButton:hover { background-color: #444444; }
+QPushButton:pressed { background-color: #222222; }
+QPushButton:disabled { background-color: #555555; color: #888888; }
+QPushButton#PlayBtn { background-color: #1A73E8; border: none; }
+QPushButton#StopBtn { background-color: #D32F2F; border: none; }
+QPushButton#AdminBtn { background-color: #FFA000; color: black; border: none; }
+QSlider::groove:horizontal { border: 1px solid #999999; height: 8px; background: #333333; margin: 2px 0; border-radius: 4px; }
+QSlider::handle:horizontal { background: #1A73E8; border: 1px solid #1A73E8; width: 18px; height: 18px; margin: -6px 0; border-radius: 9px; }
 """
-class DatabaseHandler:
-    def __init__(self, db_path):
-        self.db_path = db_path
-        self.mutex = QMutex()
-    def get_person_info(self, name):
-        self.mutex.lock(); info = None
-        try:
-            conn = sqlite3.connect(self.db_path); c = conn.cursor()
-            c.execute("SELECT full_name, is_criminal, crime_type, description FROM persons WHERE name=?", (name.lower(),))
-            r = c.fetchone(); conn.close()
-            if r: 
-                info = {"name": name, "full_name": r[0], "is_criminal": bool(r[1]), "crime_type": r[2], "description": r[3]}
-        except: pass
-        self.mutex.unlock(); return info
-    def get_all_persons(self):
-        self.mutex.lock(); data = []
-        try:
-            conn = sqlite3.connect(self.db_path); c = conn.cursor()
-            c.execute("SELECT name, full_name, crime_type, description FROM persons")
-            data = c.fetchall(); conn.close()
-        except: pass
-        self.mutex.unlock(); return data
-    def delete_person(self, name):
-        self.mutex.lock()
-        try:
-            conn = sqlite3.connect(self.db_path); c = conn.cursor()
-            c.execute("DELETE FROM persons WHERE name=?", (name,))
-            conn.commit(); conn.close()
-            for f in os.listdir(PERSONS_DIR):
-                if f.startswith(name + "_"):
-                    try: os.remove(os.path.join(PERSONS_DIR, f))
-                    except: pass
-        except: pass
-        self.mutex.unlock()
-class RecordsDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("KAYITLARI YONET")
-        self.resize(800, 600)
-        self.setStyleSheet(PROFESSIONAL_THEME)
-        self.db = DatabaseHandler(DB_PATH)
-        self.init_ui()
-    def init_ui(self):
-        l = QVBoxLayout(self)
-        self.table = QTableWidget()
-        self.table.setColumnCount(4)
-        self.table.setHorizontalHeaderLabels(["Sistem ID", "Ad Soyad", "Suc Tipi", "Aciklama"])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        l.addWidget(self.table)
-        btn_del = QPushButton("SECILI KAYDI SIL")
-        btn_del.clicked.connect(self.delete_rec)
-        btn_del.setStyleSheet("background-color: 
-        l.addWidget(btn_del)
-        self.load_data()
-    def load_data(self):
-        self.table.setRowCount(0)
-        data = self.db.get_all_persons()
-        for i, row in enumerate(data):
-            self.table.insertRow(i)
-            self.table.setItem(i, 0, QTableWidgetItem(row[0]))
-            self.table.setItem(i, 1, QTableWidgetItem(row[1]))
-            self.table.setItem(i, 2, QTableWidgetItem(row[2]))
-            self.table.setItem(i, 3, QTableWidgetItem(row[3]))
-    def delete_rec(self):
-        r = self.table.currentRow()
-        if r < 0: return
-        name = self.table.item(r, 0).text()
-        res = QMessageBox.question(self, "Onay", f"{name} kaydini silmek istediginize emin misiniz?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-        if res == QMessageBox.StandardButton.Yes:
-            self.db.delete_person(name)
-            self.load_data()
-            QMessageBox.information(self, "Bilgi", "Kayit silindi.")
-class AdminDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("EGM VERI GIRISI") 
-        self.resize(600, 700)
-        self.setStyleSheet(PROFESSIONAL_THEME)
-        self.selected_files = []
-        self.init_ui()
-    def init_ui(self):
-        l = QVBoxLayout(self)
-        l.addWidget(QLabel("Ad Soyad:")); self.inp_fn = QTextEdit(); self.inp_fn.setFixedHeight(30); l.addWidget(self.inp_fn)
-        self.r_crim = QRadioButton("SUCLU"); self.r_inno = QRadioButton("TEMIZ"); self.r_inno.setChecked(True)
-        l.addWidget(self.r_crim); l.addWidget(self.r_inno)
-        self.combo = QComboBox(); self.combo.addItems(["Yok", "Hirsizlik", "Gasp", "Teror", "Diger"]); self.combo.setEditable(True); l.addWidget(self.combo)
-        self.inp_desc = QTextEdit(); self.inp_desc.setFixedHeight(60); l.addWidget(self.inp_desc)
-        self.lbl_cnt = QLabel("0 Secildi"); l.addWidget(self.lbl_cnt)
-        btn_sel = QPushButton("FOTO SEC"); btn_sel.clicked.connect(self.sel_phot); l.addWidget(btn_sel)
-        btn_sav = QPushButton("KAYDET"); btn_sav.clicked.connect(self.save); l.addWidget(btn_sav)
-    def normalize_chars(self, text):
-        replacements = {
-            'ğ': 'g', 'Ğ': 'g', 'ü': 'u', 'Ü': 'u', 'ş': 's', 'Ş': 's',
-            'ı': 'i', 'İ': 'i', 'ö': 'o', 'Ö': 'o', 'ç': 'c', 'Ç': 'c'
-        }
-        for tr, en in replacements.items():
-            text = text.replace(tr, en)
-        text = ''.join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn')
-        return "".join([c if c.isalnum() else "_" for c in text]).lower()
-    def save(self):
-        fn = self.inp_fn.toPlainText().strip()
-        if not fn:
-            QMessageBox.warning(self, "Eksik Bilgi", "Lutfen Ad Soyad giriniz."); return
-        if not self.selected_files:
-            QMessageBox.warning(self, "Eksik Bilgi", "Lutfen en az bir fotograf seciniz."); return
-        base_id = self.normalize_chars(fn)
-        rand_suffix = random.randint(1000, 9999)
-        sn = f"{base_id}_{rand_suffix}"
-        isc = 1 if self.r_crim.isChecked() else 0
-        try:
-            for i, fp in enumerate(self.selected_files):
-                shutil.copy(fp, os.path.join(PERSONS_DIR, f"{sn}_{i+1}{os.path.splitext(fp)[1]}"))
-            conn = sqlite3.connect(DB_PATH); c = conn.cursor()
-            c.execute("INSERT INTO persons (name, full_name, is_criminal, crime_type, description) VALUES (?,?,?,?,?)",
-                      (sn, fn, isc, self.combo.currentText(), self.inp_desc.toPlainText()))
-            conn.commit(); conn.close(); 
-            QMessageBox.information(self, "Basarili", f"Kayit eklendi.\nSistem ID: {sn}")
-            self.accept()
-        except Exception as e: QMessageBox.critical(self, "Hata", str(e))
-    def sel_phot(self):
-        fs, _ = QFileDialog.getOpenFileNames(self, "Sec", "", "Resimler (*.jpg *.png)")
-        if fs: self.selected_files = fs; self.lbl_cnt.setText(f"{len(fs)} Secildi")
+
+
 class VideoWorker(QThread):
     change_pixmap = pyqtSignal(QImage)
     person_found = pyqtSignal(dict) 
@@ -222,15 +94,17 @@ class VideoWorker(QThread):
     finished = pyqtSignal()
     duration_set = pyqtSignal(int)
     position_changed = pyqtSignal(int)
+    
     def __init__(self, vpath):
         super().__init__()
         self.vpath = vpath
         self.running = True
         self.paused = False
         self.seek_req = -1
-        self.db = DatabaseHandler(DB_PATH)
         self.kb = {}
+        self.metadata = {} # New metadata storage
         self.reload = False
+
     def toggle_pause(self): self.paused = not self.paused; return self.paused
     def set_seek(self, frame): self.seek_req = frame
     def trigger_reload(self): self.reload = True
@@ -265,55 +139,115 @@ class VideoWorker(QThread):
         self.position_changed.emit(int(pos))
         try: faces = app.get(frame)
         except: faces = []
+
         for face in faces:
             bbox = face.bbox.astype(int)
-            name, best = "unknown", -1.0
+            unique_name, best = "unknown", -1.0
+            
             for pn, embs in self.kb.items():
                 for e in embs:
                     sim = np.dot(face.embedding, e) / (norm(face.embedding) * norm(e))
-                    if sim > best and sim > SIMILARITY_THRESHOLD: name, best = pn, sim
+                    if sim > best:
+                        if sim > SIMILARITY_THRESHOLD: unique_name, best = pn, sim
+            
             is_crim, dname = False, "TANIMSIZ"
-            info = {"name": name, "full_name": name, "is_criminal": False, "crime_type": "Bilinmiyor", "description": ""}
-            if name != "unknown":
-                db_info = self.db.get_person_info(name)
-                if db_info: 
-                    info = db_info
-                    dname, is_crim = info['full_name'], info['is_criminal']
-                else:
-                    dname = name
+            info = {"name": unique_name, "full_name": unique_name, "is_criminal": False, "crime_type": "", "display_photo": None}
+            
+            if unique_name != "unknown" and unique_name in self.metadata:
+                meta = self.metadata[unique_name]
+                dname = meta["full_name"]
+                is_crim = meta["is_criminal"]
+                info = {
+                    "name": unique_name,
+                    "full_name": dname,
+                    "is_criminal": is_crim,
+                    "crime_type": "", # No crime type in filename anymore
+                    "display_photo": meta["display_photo"]
+                }
+                
                 self.person_found.emit(info)
+            
             color = (0, 0, 255) if is_crim else (0, 255, 0)
+            
             cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), color, 2)
-            label = f"SUCLU %{int(best*100)}" if is_crim else dname
+            label = f"{dname} : {'SUCLU' if is_crim else 'TEMIZ'}" if unique_name != 'unknown' else "TANIMSIZ"
+            
             if label:
                 cv2.rectangle(frame, (bbox[0], bbox[1]-30), (bbox[0]+200, bbox[1]), color, -1)
                 frame = put_text_utf8(frame, label, (bbox[0]+5, bbox[1]-25), (255,255,255))
+
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         h, w, ch = rgb.shape
         bytes_per_line = ch * w
         qt_img = QImage(rgb.data, w, h, bytes_per_line, QImage.Format.Format_RGB888).copy()
         self.change_pixmap.emit(qt_img)
+
     def load_db(self, app):
         self.kb = {}
-        if not os.path.exists(PERSONS_DIR): return
-        for f in os.listdir(PERSONS_DIR):
-            if f.lower().endswith(('.jpg', '.png', '.jpeg')):
-                base_name = os.path.splitext(f)[0]
-                parts = base_name.split('_')
-                if len(parts) > 1:
-                    rn = "_".join(parts[:-1]).lower()
-                else:
-                    rn = base_name.lower()
-                img = cv2.imread(os.path.join(PERSONS_DIR, f))
-                if img is not None:
-                    faces = app.get(img)
-                    if faces:
-                        if rn not in self.kb: self.kb[rn] = []
-                        self.kb[rn].append(faces[0].embedding)
+        self.metadata = {}
+        print("DEBUG: Loading faces (Name_Surname_Status_Angle approach)...")
+        
+        persons_dir = os.path.join(BASE_DIR, "CAMS", "Persons")
+        if not os.path.exists(persons_dir): return
+        
+        file_map = {} # Key: Full Name, Value: List of files
+        
+        for root, dirs, files in os.walk(persons_dir):
+            for file in files:
+                if file.lower().endswith(('.jpg', '.png', '.jpeg')):
+                    path = os.path.join(root, file)
+                    stem = os.path.splitext(file)[0]
+                    
+                    
+                    parts = stem.split('_')
+                    
+                    
+                    if len(parts) >= 3:
+                        angle_part = parts[-1] 
+                        status_part = parts[-2]
+                        
+                        if status_part in ['0', '1']:
+                            name_parts = parts[:-2]
+                            full_name = " ".join(name_parts)
+                            is_crim = (status_part == '1')
+                            
+                            if full_name not in file_map:
+                                file_map[full_name] = {"files": [], "is_criminal": is_crim, "display_photo": None}
+                            
+                            file_map[full_name]["files"].append(path)
+                            
+                            if angle_part == '0':
+                                file_map[full_name]["display_photo"] = path
+                        else:
+                            pass # Unknown format
+                    else:
+                        pass # Too short
+
+        for name, data in file_map.items():
+            key = name
+            self.metadata[key] = {
+                "full_name": name,
+                "is_criminal": data["is_criminal"],
+                "display_photo": data["display_photo"] if data["display_photo"] else (data["files"][0] if data["files"] else None)
+            }
+            self.kb[key] = []
+            
+            for fpath in data["files"]:
+                try:
+                    img_array = np.fromfile(fpath, np.uint8)
+                    img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+                    if img is not None:
+                         faces = app.get(img)
+                         if faces:
+                             self.kb[key].append(faces[0].embedding)
+                except Exception as e:
+                    print(f"Error loading {fpath}: {e}")
+
+        print(f"DEBUG: Total identities loaded: {len(self.kb)}")
 class GBTApp(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("EGM AKILLI GBT SISTEMI (MULTI-DETECT)")
+        self.setWindowTitle("EGM CANLI TAKİP")
         self.resize(1500, 950)
         self.setStyleSheet(PROFESSIONAL_THEME)
         self.curr_vid = None
@@ -327,14 +261,10 @@ class GBTApp(QWidget):
         layout = QHBoxLayout(self)
         left_frame = QFrame(); left_frame.setObjectName("LeftPanel"); left_frame.setFixedWidth(280)
         left = QVBoxLayout(left_frame)
-        btn_adm = QPushButton("ADMIN PANELI"); btn_adm.clicked.connect(self.open_admin); btn_adm.setFixedHeight(50); btn_adm.setObjectName("AdminBtn")
-        left.addWidget(btn_adm)
-        btn_recs = QPushButton("KAYITLARI YONET"); btn_recs.clicked.connect(self.open_records); btn_recs.setFixedHeight(40); btn_recs.setStyleSheet("background-color: 
-        left.addWidget(btn_recs)
         f_lay = QHBoxLayout()
         self.lbl_path = QLabel("Varsayılan Klasör"); self.lbl_path.setStyleSheet("color:gray; font-size:10px;")
         btn_dir = QPushButton("KLASÖR SEÇ"); btn_dir.clicked.connect(self.select_folder)
-        btn_dir.setStyleSheet("background-color:
+        btn_dir.setStyleSheet("background-color: #333333; color: white;")
         f_lay.addWidget(btn_dir)
         left.addLayout(f_lay); left.addWidget(self.lbl_path)
         left.addWidget(QLabel("KAYITLAR"))
@@ -404,28 +334,30 @@ class GBTApp(QWidget):
         pid = info['name']
         if pid in self.detected_ids: return 
         self.detected_ids.add(pid)
-        reg_img_path = None
-        for f in os.listdir(PERSONS_DIR):
-            if f.startswith(pid + "_") and f.lower().endswith(('jpg','png','jpeg')):
-                reg_img_path = os.path.join(PERSONS_DIR, f)
-                break
+        
+        display_photo = info.get('display_photo')
+        
         icon = QIcon()
-        if reg_img_path:
-            reader = QImageReader(reg_img_path)
-            reader.setAutoTransform(True)
-            img = reader.read()
-            if not img.isNull():
-                icon = QIcon(QPixmap.fromImage(img))
-            else:
-                icon = QIcon(reg_img_path)
-        item_text = f"{info['full_name']}\n{info['crime_type']}\n{info['description']}"
+        if display_photo and os.path.exists(display_photo):
+            try:
+                img_array = np.fromfile(display_photo, np.uint8)
+                img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+                if img is not None:
+                    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                    h, w, ch = img.shape
+                    qimg = QImage(img.data, w, h, ch * w, QImage.Format.Format_RGB888)
+                    icon = QIcon(QPixmap.fromImage(qimg))
+            except: pass
+            
+        item_text = f"{info['full_name']}"
         if info['is_criminal']:
             item_text = f"[SUCLU] {item_text}"
         else:
             item_text = f"[TEMIZ] {item_text}"
+            
         item = QListWidgetItem(icon, item_text)
         item.setFont(self.font())
-        item.setBackground(QColor("
+        item.setBackground(QColor("#B71C1C" if info['is_criminal'] else "#2E7D32"))
         item.setForeground(QColor("white"))
         self.det_list.insertItem(0, item)
     def clear_detections(self):
@@ -442,13 +374,6 @@ class GBTApp(QWidget):
     def on_move(self):
         if self.is_dragging and self.worker: self.worker.set_seek(self.slider.value())
     def on_release(self): self.is_dragging = False
-    def open_admin(self):
-        if self.worker and self.worker.isRunning():
-            self.worker.paused = True; self.btn_play.setText("OYNAT")
-        if AdminDialog(self).exec() and self.worker: self.worker.trigger_reload()
-    def open_records(self):
-        RecordsDialog(self).exec()
-        if self.worker: self.worker.trigger_reload()
     def stop(self): 
         if self.worker: self.worker.kill()
     def on_fin(self):
