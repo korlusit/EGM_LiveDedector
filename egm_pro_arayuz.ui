@@ -1,0 +1,1014 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1280</width>
+    <height>850</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>E.G.M - Entegre Güvenlik Yönetim Sistemi</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">/* --- MODERN KOYU TEMA --- */
+QMainWindow {
+	background-color: #121212; /* Çok koyu ana arka plan */
+    color: #E0E0E0;
+}
+
+/* --- SOL SIDEBAR --- */
+#sidebarFrame {
+	background-color: #1E1E2E; /* Koyu lacivert/gri ton */
+	border-right: 1px solid #2A2A3A;
+}
+
+#labelTitle {
+	color: #FFFFFF;
+    font-family: 'Segoe UI', sans-serif;
+	font-weight: 800;
+	font-size: 22px;
+    letter-spacing: 1px;
+	margin-top: 15px;
+    margin-bottom: 20px;
+}
+
+/* Sidebar Butonları */
+QPushButton.sidebarBtn {
+	background-color: transparent;
+	color: #A0A0B0;
+	text-align: left;
+	padding: 12px 25px;
+	border: none;
+	border-radius: 12px;
+	font-size: 15px;
+    font-weight: 600;
+	margin: 4px 15px;
+}
+
+QPushButton.sidebarBtn:hover {
+	background-color: #2A2A3A; /* Hover rengi */
+	color: #FFFFFF;
+    padding-left: 30px; /* Hafif kayma efekti */
+}
+
+QPushButton.sidebarBtn:pressed {
+	background-color: #3498db; /* Tıklama rengi (Polis Mavisi) */
+    color: white;
+}
+
+/* --- ANA İÇERİK ALANI --- */
+#mainContentWidget {
+    background-color: #181818; /* Ana içerik arka planı */
+}
+
+/* Bölüm Başlıkları */
+QLabel.pageHeader {
+    font-size: 28px;
+    font-weight: bold;
+    color: #FFFFFF;
+    margin-bottom: 20px;
+}
+
+/* --- KART TASARIMLARI (WATERMARK İKONLU) --- */
+QFrame.cardFrame {
+	background-color: #252535;
+	border-radius: 20px;
+    border: 1px solid #303040;
+    /* İkonlar aşağıda ID bazlı tanımlanacak */
+}
+
+QFrame.cardFrame:hover {
+	background-color: #2A2A3A;
+    border: 1px solid #3498db; /* Mavi vurgu */
+    margin-top: -5px; /* Yukarı kalkma efekti */
+}
+
+QLabel.cardTitle {
+	font-size: 24px;
+	font-weight: 800;
+	color: #FFFFFF;
+	background: transparent;
+}
+
+QLabel.cardDesc {
+	color: #B0B0C0;
+	font-size: 14px;
+	background: transparent;
+    margin-top: 10px;
+}
+
+QPushButton.cardActionBtn {
+	background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 #3498db, stop:1 #2980b9);
+	color: white;
+	border-radius: 10px;
+	font-weight: bold;
+    font-size: 14px;
+	padding: 12px;
+	border: none;
+    margin-top: 20px;
+}
+
+QPushButton.cardActionBtn:hover {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 #4aa3df, stop:1 #3498db);
+}
+
+/* --- KARTLARA ÖZEL WATERMARK İKONLARI --- 
+   Not: Bu URL'ler örnek amaçlıdır. Gerçek projede yerel dosyalar (.qrc) kullanmak daha iyidir.
+   background-size: 120px; ile ikon boyutu ayarlanıyor, sağ üstte duruyor.
+*/
+#cardPTS {
+	background-image: url('https://cdn-icons-png.flaticon.com/512/2554/2554933.png');
+	background-repeat: no-repeat;
+	background-position: right 20px top 20px;
+    background-size: 140px;
+}
+
+#cardGBT {
+	background-image: url('https://cdn-icons-png.flaticon.com/512/921/921586.png');
+	background-repeat: no-repeat;
+	background-position: right 20px top 20px;
+    background-size: 140px;
+}
+
+#cardTutanak {
+	background-image: url('https://cdn-icons-png.flaticon.com/512/2991/2991108.png');
+	background-repeat: no-repeat;
+	background-position: right 20px top 20px;
+    background-size: 140px;
+}
+
+/* --- PROFİL VE ADMIN FORMLARI --- */
+QFrame.dataCard {
+    background-color: #252535;
+    border-radius: 15px;
+    padding: 30px;
+}
+
+QLabel.formLabel {
+    font-size: 16px;
+    font-weight: 600;
+    color: #3498db; /* Etiket rengi */
+}
+
+QLabel.formData {
+    font-size: 18px;
+    color: #FFFFFF;
+    font-weight: 500;
+    padding: 5px;
+    border-bottom: 1px solid #303040;
+}
+
+QLineEdit.adminInput {
+    background-color: #1E1E2E;
+    border: 2px solid #303040;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 16px;
+    color: #FFFFFF;
+}
+
+QLineEdit.adminInput:focus {
+    border: 2px solid #3498db;
+}
+
+QPushButton.saveBtn {
+    background-color: #27ae60; /* Yeşil kaydet butonu */
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 15px;
+    border-radius: 10px;
+}
+QPushButton.saveBtn:hover { background-color: #2ecc71; }
+
+/* Ayarlar Renk Butonları */
+QPushButton.colorBtn {
+    padding: 20px;
+    border-radius: 15px;
+    font-size: 16px;
+    font-weight: bold;
+    background-color: #252535;
+    color: white;
+    border: 2px solid #303040;
+    text-align: center;
+}
+</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="mainLayout">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <item>
+     <widget class="QFrame" name="sidebarFrame">
+      <property name="minimumSize">
+       <size>
+        <width>280</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>280</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <layout class="QVBoxLayout" name="sidebarLayout">
+       <property name="spacing">
+        <number>15</number>
+       </property>
+       <property name="topMargin">
+        <number>40</number>
+       </property>
+       <property name="bottomMargin">
+        <number>30</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="labelImagePlace">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>180</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">border: 3px dashed #3498db; border-radius: 15px; color: #3498db;</string>
+         </property>
+         <property name="text">
+          <string>RESİM ALANI</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="labelTitle">
+         <property name="text">
+          <string>E.G.M UYGULAMA</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_1">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>30</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       
+       <item>
+        <widget class="QPushButton" name="btnAnaSayfa">
+         <property name="class" stdset="0">
+          <string>sidebarBtn</string>
+         </property>
+         <property name="text">
+          <string>  Ana Ekran</string>
+         </property>
+         <property name="cursor">
+          <cursorShape>PointingHandCursor</cursorShape>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnProfil">
+         <property name="class" stdset="0">
+          <string>sidebarBtn</string>
+         </property>
+         <property name="text">
+          <string>  Profil Bilgileri</string>
+         </property>
+         <property name="cursor">
+          <cursorShape>PointingHandCursor</cursorShape>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnAdmin">
+         <property name="class" stdset="0">
+          <string>sidebarBtn</string>
+         </property>
+         <property name="text">
+          <string>  Admin Paneli</string>
+         </property>
+         <property name="cursor">
+          <cursorShape>PointingHandCursor</cursorShape>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnAyarlar">
+         <property name="class" stdset="0">
+          <string>sidebarBtn</string>
+         </property>
+         <property name="text">
+          <string>  Sistem Ayarları</string>
+         </property>
+         <property name="cursor">
+          <cursorShape>PointingHandCursor</cursorShape>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="labelVersion">
+         <property name="styleSheet">
+          <string notr="true">color: #505060; font-size: 12px;</string>
+         </property>
+         <property name="text">
+          <string>v3.0.1 Secure Build</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    
+    <item>
+     <widget class="QWidget" name="mainContentWidget" native="true">
+      <layout class="QVBoxLayout" name="contentLayout">
+       <property name="leftMargin">
+        <number>40</number>
+       </property>
+       <property name="topMargin">
+        <number>40</number>
+       </property>
+       <property name="rightMargin">
+        <number>40</number>
+       </property>
+       <property name="bottomMargin">
+        <number>40</number>
+       </property>
+       <item>
+        <widget class="QStackedWidget" name="mainStack">
+         <property name="currentIndex">
+          <number>0</number>
+         </property>
+         
+         <widget class="QWidget" name="pageHome">
+          <layout class="QVBoxLayout" name="verticalLayout_Home">
+           <property name="spacing">
+            <number>30</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="label_2">
+             <property name="class" stdset="0">
+              <string>pageHeader</string>
+             </property>
+             <property name="text">
+              <string>Uygulama Merkezi</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QWidget" name="cardsContainer" native="true">
+             <layout class="QGridLayout" name="gridLayout">
+              <property name="horizontalSpacing">
+               <number>30</number>
+              </property>
+              <property name="verticalSpacing">
+               <number>30</number>
+              </property>
+              
+              <item row="0" column="0">
+               <widget class="QFrame" name="cardPTS">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>240</height>
+                 </size>
+                </property>
+                <property name="class" stdset="0">
+                 <string>cardFrame</string>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_4">
+                 <property name="spacing">
+                  <number>15</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>30</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>30</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>30</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>30</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="label_4">
+                   <property name="class" stdset="0">
+                    <string>cardTitle</string>
+                   </property>
+                   <property name="text">
+                    <string>PTS SORGU</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="label_7">
+                   <property name="class" stdset="0">
+                    <string>cardDesc</string>
+                   </property>
+                   <property name="text">
+                    <string>Plaka Tanıma Sistemi üzerinden anlık araç sorgulama ve takip.</string>
+                   </property>
+                   <property name="wordWrap">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="verticalSpacer_3">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>40</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="btnOpenPTS">
+                   <property name="class" stdset="0">
+                    <string>cardActionBtn</string>
+                   </property>
+                   <property name="text">
+                    <string>SİSTEMİ BAŞLAT</string>
+                   </property>
+                   <property name="cursor">
+                    <cursorShape>PointingHandCursor</cursorShape>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              
+              <item row="0" column="1">
+               <widget class="QFrame" name="cardGBT">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>240</height>
+                 </size>
+                </property>
+                <property name="class" stdset="0">
+                 <string>cardFrame</string>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_5">
+                 <property name="spacing">
+                  <number>15</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>30</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>30</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>30</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>30</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="label_5">
+                   <property name="class" stdset="0">
+                    <string>cardTitle</string>
+                   </property>
+                   <property name="text">
+                    <string>GBT KONTROL</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="label_8">
+                   <property name="class" stdset="0">
+                    <string>cardDesc</string>
+                   </property>
+                   <property name="text">
+                    <string>Merkezi veritabanı üzerinden detaylı şahıs ve kimlik sorgusu.</string>
+                   </property>
+                   <property name="wordWrap">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="verticalSpacer_4">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>40</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="btnOpenGBT">
+                   <property name="class" stdset="0">
+                    <string>cardActionBtn</string>
+                   </property>
+                   <property name="text">
+                    <string>SORGULA</string>
+                   </property>
+                   <property name="cursor">
+                    <cursorShape>PointingHandCursor</cursorShape>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              
+              <item row="0" column="2">
+               <widget class="QFrame" name="cardTutanak">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>240</height>
+                 </size>
+                </property>
+                <property name="class" stdset="0">
+                 <string>cardFrame</string>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_6">
+                 <property name="spacing">
+                  <number>15</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>30</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>30</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>30</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>30</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="label_6">
+                   <property name="class" stdset="0">
+                    <string>cardTitle</string>
+                   </property>
+                   <property name="text">
+                    <string>DİJİTAL TUTANAK</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="label_9">
+                   <property name="class" stdset="0">
+                    <string>cardDesc</string>
+                   </property>
+                   <property name="text">
+                    <string>Olay yeri ve ifade tutanaklarını dijital ortamda oluşturun ve arşivleyin.</string>
+                   </property>
+                   <property name="wordWrap">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="verticalSpacer_5">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>40</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="btnOpenTutanak">
+                   <property name="class" stdset="0">
+                    <string>cardActionBtn</string>
+                   </property>
+                   <property name="text">
+                    <string>OLUŞTUR</string>
+                   </property>
+                   <property name="cursor">
+                    <cursorShape>PointingHandCursor</cursorShape>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <spacer name="verticalSpacer_6">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
+         
+         <widget class="QWidget" name="pageProfile">
+          <layout class="QVBoxLayout" name="verticalLayout_7">
+           <property name="spacing">
+            <number>30</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="label_3">
+             <property name="class" stdset="0">
+              <string>pageHeader</string>
+             </property>
+             <property name="text">
+              <string>Personel Kimlik Kartı</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QFrame" name="profileDataCard">
+             <property name="class" stdset="0">
+              <string>dataCard</string>
+             </property>
+             <layout class="QFormLayout" name="formLayout">
+              <property name="horizontalSpacing">
+               <number>30</number>
+              </property>
+              <property name="verticalSpacing">
+               <number>25</number>
+              </property>
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_10">
+                <property name="class" stdset="0">
+                 <string>formLabel</string>
+                </property>
+                <property name="text">
+                 <string>Ad Soyad:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QLabel" name="viewName">
+                <property name="class" stdset="0">
+                 <string>formData</string>
+                </property>
+                <property name="text">
+                 <string>Yükleniyor...</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_11">
+                <property name="class" stdset="0">
+                 <string>formLabel</string>
+                </property>
+                <property name="text">
+                 <string>Rütbe:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLabel" name="viewRank">
+                <property name="class" stdset="0">
+                 <string>formData</string>
+                </property>
+                <property name="text">
+                 <string>Yükleniyor...</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="label_12">
+                <property name="class" stdset="0">
+                 <string>formLabel</string>
+                </property>
+                <property name="text">
+                 <string>Sicil No:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QLabel" name="viewID">
+                <property name="class" stdset="0">
+                 <string>formData</string>
+                </property>
+                <property name="text">
+                 <string>Yükleniyor...</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="label_13">
+                <property name="class" stdset="0">
+                 <string>formLabel</string>
+                </property>
+                <property name="text">
+                 <string>Görev Yeri:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QLabel" name="viewDuty">
+                <property name="class" stdset="0">
+                 <string>formData</string>
+                </property>
+                <property name="text">
+                 <string>Yükleniyor...</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <spacer name="verticalSpacer_7">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
+         
+         <widget class="QWidget" name="pageAdmin">
+          <layout class="QVBoxLayout" name="verticalLayout_8">
+           <property name="spacing">
+            <number>30</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="label_14">
+             <property name="class" stdset="0">
+              <string>pageHeader</string>
+             </property>
+             <property name="text">
+              <string>Personel Veri Yönetimi (Admin)</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QFrame" name="adminDataCard">
+             <property name="class" stdset="0">
+              <string>dataCard</string>
+             </property>
+             <layout class="QFormLayout" name="formLayout_2">
+              <property name="horizontalSpacing">
+               <number>30</number>
+              </property>
+              <property name="verticalSpacing">
+               <number>25</number>
+              </property>
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_15">
+                <property name="class" stdset="0">
+                 <string>formLabel</string>
+                </property>
+                <property name="text">
+                 <string>Ad Soyad:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QLineEdit" name="editName">
+                <property name="class" stdset="0">
+                 <string>adminInput</string>
+                </property>
+                <property name="placeholderText">
+                 <string>Personel adını giriniz</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_16">
+                <property name="class" stdset="0">
+                 <string>formLabel</string>
+                </property>
+                <property name="text">
+                 <string>Rütbe:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLineEdit" name="editRank">
+                <property name="class" stdset="0">
+                 <string>adminInput</string>
+                </property>
+                <property name="placeholderText">
+                 <string>Güncel rütbe</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="label_17">
+                <property name="class" stdset="0">
+                 <string>formLabel</string>
+                </property>
+                <property name="text">
+                 <string>Sicil No:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QLineEdit" name="editID">
+                <property name="class" stdset="0">
+                 <string>adminInput</string>
+                </property>
+                <property name="placeholderText">
+                 <string>Sicil numarası</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="label_18">
+                <property name="class" stdset="0">
+                 <string>formLabel</string>
+                </property>
+                <property name="text">
+                 <string>Görev Yeri:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QLineEdit" name="editDuty">
+                <property name="class" stdset="0">
+                 <string>adminInput</string>
+                </property>
+                <property name="placeholderText">
+                 <string>Bağlı olduğu birim</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QPushButton" name="btnSaveData">
+                <property name="class" stdset="0">
+                 <string>saveBtn</string>
+                </property>
+                <property name="text">
+                 <string>VERİLERİ GÜNCELLE VE KAYDET</string>
+                </property>
+                <property name="cursor">
+                 <cursorShape>PointingHandCursor</cursorShape>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <spacer name="verticalSpacer_8">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
+         
+         <widget class="QWidget" name="pageSettings">
+          <layout class="QVBoxLayout" name="verticalLayout_9">
+           <property name="spacing">
+            <number>30</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="label_19">
+             <property name="class" stdset="0">
+              <string>pageHeader</string>
+             </property>
+             <property name="text">
+              <string>Sistem Tema Ayarları</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QWidget" name="widget" native="true">
+             <layout class="QHBoxLayout" name="horizontalLayout_2">
+              <property name="spacing">
+               <number>30</number>
+              </property>
+              <item>
+               <widget class="QPushButton" name="btnColorSidebar">
+                <property name="class" stdset="0">
+                 <string>colorBtn</string>
+                </property>
+                <property name="text">
+                 <string>Sol Menü Rengini Değiştir</string>
+                </property>
+                <property name="cursor">
+                 <cursorShape>PointingHandCursor</cursorShape>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnColorBg">
+                <property name="class" stdset="0">
+                 <string>colorBtn</string>
+                </property>
+                <property name="text">
+                 <string>Ana Arka Plan Rengini Değiştir</string>
+                </property>
+                <property name="cursor">
+                 <cursorShape>PointingHandCursor</cursorShape>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <spacer name="verticalSpacer_9">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
