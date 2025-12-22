@@ -2,9 +2,5 @@ PyQt6
 opencv-python
 numpy
 insightface
-onnxruntime-directml
+onnxruntime
 Pillow
-ultralytics
-easyocr
-torch
-torchvision
