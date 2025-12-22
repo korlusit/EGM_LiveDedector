@@ -1,0 +1,10 @@
+PyQt6
+opencv-python
+numpy
+insightface
+onnxruntime-directml
+Pillow
+ultralytics
+easyocr
+torch
+torchvision
