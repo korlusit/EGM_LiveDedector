@@ -4,6 +4,8 @@ import os
 import shutil
 import sqlite3
 import numpy as np
+import random
+import unicodedata
 import onnxruntime
 from insightface.app import FaceAnalysis
 from numpy.linalg import norm
@@ -12,7 +14,8 @@ from PIL import Image, ImageDraw, ImageFont
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
                              QLabel, QPushButton, QTextEdit, QListWidget, QListWidgetItem,
                              QFrame, QSizePolicy, QFileDialog, QMessageBox, 
-                             QComboBox, QRadioButton, QButtonGroup, QDialog, QSlider)
+                             QComboBox, QRadioButton, QButtonGroup, QDialog, QSlider,
+                             QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView)
 from PyQt6.QtGui import QImage, QPixmap, QIcon, QImageReader
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QMutex, QSize
 
@@ -119,6 +122,76 @@ class DatabaseHandler:
         except: pass
         self.mutex.unlock(); return info
 
+    def get_all_persons(self):
+        self.mutex.lock(); data = []
+        try:
+            conn = sqlite3.connect(self.db_path); c = conn.cursor()
+            c.execute("SELECT name, full_name, crime_type, description FROM persons")
+            data = c.fetchall(); conn.close()
+        except: pass
+        self.mutex.unlock(); return data
+
+    def delete_person(self, name):
+        self.mutex.lock()
+        try:
+            conn = sqlite3.connect(self.db_path); c = conn.cursor()
+            c.execute("DELETE FROM persons WHERE name=?", (name,))
+            conn.commit(); conn.close()
+            # Delete associated images
+            for f in os.listdir(PERSONS_DIR):
+                if f.startswith(name + "_"):
+                    try: os.remove(os.path.join(PERSONS_DIR, f))
+                    except: pass
+        except: pass
+        self.mutex.unlock()
+
+class RecordsDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("KAYITLARI YONET")
+        self.resize(800, 600)
+        self.setStyleSheet(PROFESSIONAL_THEME)
+        self.db = DatabaseHandler(DB_PATH)
+        self.init_ui()
+
+    def init_ui(self):
+        l = QVBoxLayout(self)
+        
+        self.table = QTableWidget()
+        self.table.setColumnCount(4)
+        self.table.setHorizontalHeaderLabels(["Sistem ID", "Ad Soyad", "Suc Tipi", "Aciklama"])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        l.addWidget(self.table)
+        
+        btn_del = QPushButton("SECILI KAYDI SIL")
+        btn_del.clicked.connect(self.delete_rec)
+        btn_del.setStyleSheet("background-color: #dc3545;")
+        l.addWidget(btn_del)
+        
+        self.load_data()
+
+    def load_data(self):
+        self.table.setRowCount(0)
+        data = self.db.get_all_persons()
+        for i, row in enumerate(data):
+            self.table.insertRow(i)
+            self.table.setItem(i, 0, QTableWidgetItem(row[0]))
+            self.table.setItem(i, 1, QTableWidgetItem(row[1]))
+            self.table.setItem(i, 2, QTableWidgetItem(row[2]))
+            self.table.setItem(i, 3, QTableWidgetItem(row[3]))
+
+    def delete_rec(self):
+        r = self.table.currentRow()
+        if r < 0: return
+        name = self.table.item(r, 0).text()
+        res = QMessageBox.question(self, "Onay", f"{name} kaydini silmek istediginize emin misiniz?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        if res == QMessageBox.StandardButton.Yes:
+            self.db.delete_person(name)
+            self.load_data()
+            QMessageBox.information(self, "Bilgi", "Kayit silindi.")
+
 class AdminDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -131,7 +204,7 @@ class AdminDialog(QDialog):
     def init_ui(self):
         l = QVBoxLayout(self)
         l.addWidget(QLabel("Ad Soyad:")); self.inp_fn = QTextEdit(); self.inp_fn.setFixedHeight(30); l.addWidget(self.inp_fn)
-        l.addWidget(QLabel("Sistem ID (Turkce yok):")); self.inp_sn = QTextEdit(); self.inp_sn.setFixedHeight(30); l.addWidget(self.inp_sn)
+        # Sistem ID alani kaldirildi, otomatik uretilecek.
         
         self.r_crim = QRadioButton("SUCLU"); self.r_inno = QRadioButton("TEMIZ"); self.r_inno.setChecked(True)
         l.addWidget(self.r_crim); l.addWidget(self.r_inno)
@@ -143,22 +216,51 @@ class AdminDialog(QDialog):
         btn_sel = QPushButton("FOTO SEC"); btn_sel.clicked.connect(self.sel_phot); l.addWidget(btn_sel)
         btn_sav = QPushButton("KAYDET"); btn_sav.clicked.connect(self.save); l.addWidget(btn_sav)
 
+    def normalize_chars(self, text):
+        # Basit Turkce karakter donusumu
+        replacements = {
+            'ğ': 'g', 'Ğ': 'g', 'ü': 'u', 'Ü': 'u', 'ş': 's', 'Ş': 's',
+            'ı': 'i', 'İ': 'i', 'ö': 'o', 'Ö': 'o', 'ç': 'c', 'Ç': 'c'
+        }
+        for tr, en in replacements.items():
+            text = text.replace(tr, en)
+        
+        # ASCII disindaki karakterleri temizle ve kucuk harfe cevir
+        text = ''.join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn')
+        return "".join([c if c.isalnum() else "_" for c in text]).lower()
+
+    def save(self):
+        fn = self.inp_fn.toPlainText().strip()
+        if not fn:
+            QMessageBox.warning(self, "Eksik Bilgi", "Lutfen Ad Soyad giriniz."); return
+        if not self.selected_files:
+            QMessageBox.warning(self, "Eksik Bilgi", "Lutfen en az bir fotograf seciniz."); return
+
+        # Otomatik ID Olusturma
+        base_id = self.normalize_chars(fn)
+        rand_suffix = random.randint(1000, 9999)
+        sn = f"{base_id}_{rand_suffix}"
+
+        isc = 1 if self.r_crim.isChecked() else 0
+        
+        try:
+            for i, fp in enumerate(self.selected_files):
+                shutil.copy(fp, os.path.join(PERSONS_DIR, f"{sn}_{i+1}{os.path.splitext(fp)[1]}"))
+            
+            conn = sqlite3.connect(DB_PATH); c = conn.cursor()
+            # Onceki kaydi silmeye gerek yok cunku ID unikal uretiliyor
+            c.execute("INSERT INTO persons (name, full_name, is_criminal, crime_type, description) VALUES (?,?,?,?,?)",
+                      (sn, fn, isc, self.combo.currentText(), self.inp_desc.toPlainText()))
+            conn.commit(); conn.close(); 
+            QMessageBox.information(self, "Basarili", f"Kayit eklendi.\nSistem ID: {sn}")
+            self.accept()
+        except Exception as e: QMessageBox.critical(self, "Hata", str(e))
+
     def sel_phot(self):
         fs, _ = QFileDialog.getOpenFileNames(self, "Sec", "", "Resimler (*.jpg *.png)")
         if fs: self.selected_files = fs; self.lbl_cnt.setText(f"{len(fs)} Secildi")
 
-    def save(self):
-        fn = self.inp_fn.toPlainText(); sn = self.inp_sn.toPlainText(); isc = 1 if self.r_crim.isChecked() else 0
-        if not fn or not sn or not self.selected_files: return
-        try:
-            for i, fp in enumerate(self.selected_files):
-                shutil.copy(fp, os.path.join(PERSONS_DIR, f"{sn}_{i+1}{os.path.splitext(fp)[1]}"))
-            conn = sqlite3.connect(DB_PATH); c = conn.cursor()
-            c.execute("DELETE FROM persons WHERE name=?", (sn,))
-            c.execute("INSERT INTO persons (name, full_name, is_criminal, crime_type, description) VALUES (?,?,?,?,?)",
-                      (sn, fn, isc, self.combo.currentText(), self.inp_desc.toPlainText()))
-            conn.commit(); conn.close(); self.accept()
-        except Exception as e: QMessageBox.critical(self, "Hata", str(e))
+
 
 class VideoWorker(QThread):
     change_pixmap = pyqtSignal(QImage)
@@ -262,7 +364,15 @@ class VideoWorker(QThread):
         if not os.path.exists(PERSONS_DIR): return
         for f in os.listdir(PERSONS_DIR):
             if f.lower().endswith(('.jpg', '.png', '.jpeg')):
-                rn = f.split('_')[0].lower()
+                # ID format: name_surname_id_counter.ext (e.g. ahmet_calik_1234_1.jpg)
+                # We need to remove the last part (counter) and extension to get the ID
+                base_name = os.path.splitext(f)[0]
+                parts = base_name.split('_')
+                if len(parts) > 1:
+                    rn = "_".join(parts[:-1]).lower()
+                else:
+                    rn = base_name.lower()
+
                 img = cv2.imread(os.path.join(PERSONS_DIR, f))
                 if img is not None:
                     faces = app.get(img)
@@ -280,6 +390,7 @@ class GBTApp(QWidget):
         self.is_dragging = False
         self.worker = None 
         self.detected_ids = set()
+        self.video_dir = FACECAM_DIR
         self.init_ui()
         self.load_files()
 
@@ -290,7 +401,20 @@ class GBTApp(QWidget):
         left = QVBoxLayout(left_frame)
         
         btn_adm = QPushButton("ADMIN PANELI"); btn_adm.clicked.connect(self.open_admin); btn_adm.setFixedHeight(50); btn_adm.setObjectName("AdminBtn")
-        left.addWidget(btn_adm); left.addWidget(QLabel("KAYITLAR"))
+        left.addWidget(btn_adm)
+        
+        btn_recs = QPushButton("KAYITLARI YONET"); btn_recs.clicked.connect(self.open_records); btn_recs.setFixedHeight(40); btn_recs.setStyleSheet("background-color: #555;")
+        left.addWidget(btn_recs)
+        
+        # Klasör Seçimi
+        f_lay = QHBoxLayout()
+        self.lbl_path = QLabel("Varsayılan Klasör"); self.lbl_path.setStyleSheet("color:gray; font-size:10px;")
+        btn_dir = QPushButton("KLASÖR SEÇ"); btn_dir.clicked.connect(self.select_folder)
+        btn_dir.setStyleSheet("background-color:#444; font-size:11px; padding: 5px;")
+        f_lay.addWidget(btn_dir)
+        left.addLayout(f_lay); left.addWidget(self.lbl_path)
+
+        left.addWidget(QLabel("KAYITLAR"))
         self.vlist = QListWidget(); self.vlist.itemClicked.connect(self.sel_vid); left.addWidget(self.vlist)
         btn_ref = QPushButton("Yenile"); btn_ref.clicked.connect(self.load_files); left.addWidget(btn_ref)
         self.log_box = QTextEdit(); self.log_box.setReadOnly(True); self.log_box.setFixedHeight(150); left.addWidget(self.log_box)
@@ -333,14 +457,21 @@ class GBTApp(QWidget):
 
         layout.addWidget(right_frame)
 
+    def select_folder(self):
+        d = QFileDialog.getExistingDirectory(self, "Video Klasörü Seç", self.video_dir)
+        if d:
+            self.video_dir = d
+            self.lbl_path.setText(os.path.basename(d))
+            self.load_files()
+
     def load_files(self):
         self.vlist.clear()
-        if not os.path.exists(FACECAM_DIR): os.makedirs(FACECAM_DIR)
-        fs = [f for f in os.listdir(FACECAM_DIR) if f.lower().endswith(('.mp4', '.mov', '.avi', '.mkv', '.wmv'))]
+        if not os.path.exists(self.video_dir): os.makedirs(self.video_dir)
+        fs = [f for f in os.listdir(self.video_dir) if f.lower().endswith(('.mp4', '.mov', '.avi', '.mkv', '.wmv'))]
         for f in fs: self.vlist.addItem(f)
 
     def sel_vid(self, item): 
-        self.curr_vid = os.path.join(FACECAM_DIR, item.text())
+        self.curr_vid = os.path.join(self.video_dir, item.text())
         self.btn_play.setEnabled(True)
         self.clear_detections()
 
@@ -418,6 +549,10 @@ class GBTApp(QWidget):
         if self.worker and self.worker.isRunning():
             self.worker.paused = True; self.btn_play.setText("OYNAT")
         if AdminDialog(self).exec() and self.worker: self.worker.trigger_reload()
+
+    def open_records(self):
+        RecordsDialog(self).exec()
+        if self.worker: self.worker.trigger_reload()
 
     def stop(self): 
         if self.worker: self.worker.kill()

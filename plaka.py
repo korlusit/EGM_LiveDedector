@@ -13,7 +13,8 @@ from PIL import Image, ImageDraw, ImageFont
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
                              QLabel, QPushButton, QTextEdit, QListWidget, 
                              QFrame, QSizePolicy, QFileDialog, QMessageBox, 
-                             QComboBox, QRadioButton, QButtonGroup, QDialog, QSlider)
+                             QComboBox, QRadioButton, QButtonGroup, QDialog, QSlider,
+                             QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView)
 from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QMutex
 
@@ -162,6 +163,71 @@ class DatabaseHandler:
         except: pass
         self.mutex.unlock()
 
+    def get_all_plates(self):
+        self.mutex.lock(); data = []
+        try:
+            conn = sqlite3.connect(self.db_path); c = conn.cursor()
+            c.execute("SELECT plate_number, owner, status, description FROM plates")
+            data = c.fetchall(); conn.close()
+        except: pass
+        self.mutex.unlock(); return data
+
+    def delete_plate(self, plate):
+        self.mutex.lock()
+        try:
+            conn = sqlite3.connect(self.db_path); c = conn.cursor()
+            c.execute("DELETE FROM plates WHERE plate_number=?", (plate,))
+            conn.commit(); conn.close()
+        except: pass
+        self.mutex.unlock()
+
+class RecordsDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("PLAKA KAYITLARI YONET")
+        self.resize(800, 600)
+        self.setStyleSheet(PROFESSIONAL_THEME)
+        self.db = DatabaseHandler(DB_PATH)
+        self.init_ui()
+
+    def init_ui(self):
+        l = QVBoxLayout(self)
+        
+        self.table = QTableWidget()
+        self.table.setColumnCount(4)
+        self.table.setHorizontalHeaderLabels(["Plaka", "Sahip", "Durum", "Aciklama"])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        l.addWidget(self.table)
+        
+        btn_del = QPushButton("SECILI PLAKAYI SIL")
+        btn_del.clicked.connect(self.delete_rec)
+        btn_del.setStyleSheet("background-color: #dc3545;")
+        l.addWidget(btn_del)
+        
+        self.load_data()
+
+    def load_data(self):
+        self.table.setRowCount(0)
+        data = self.db.get_all_plates()
+        for i, row in enumerate(data):
+            self.table.insertRow(i)
+            self.table.setItem(i, 0, QTableWidgetItem(str(row[0])))
+            self.table.setItem(i, 1, QTableWidgetItem(str(row[1])))
+            self.table.setItem(i, 2, QTableWidgetItem(str(row[2])))
+            self.table.setItem(i, 3, QTableWidgetItem(str(row[3])))
+
+    def delete_rec(self):
+        r = self.table.currentRow()
+        if r < 0: return
+        plate = self.table.item(r, 0).text()
+        res = QMessageBox.question(self, "Onay", f"{plate} plakasini silmek istediginize emin misiniz?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        if res == QMessageBox.StandardButton.Yes:
+            self.db.delete_plate(plate)
+            self.load_data()
+            QMessageBox.information(self, "Bilgi", "Plaka silindi.")
+
 class AdminDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -196,7 +262,9 @@ class AdminDialog(QDialog):
         status = self.combo_status.currentText()
         desc = self.inp_desc.toPlainText()
         
-        if not plate: return
+        if not plate: 
+            QMessageBox.warning(self, "Eksik Bilgi", "Lutfen Plaka Numarasi giriniz.")
+            return
         
         db = DatabaseHandler(DB_PATH)
         db.add_wanted_plate(plate, owner, status, desc)
@@ -356,6 +424,7 @@ class PlateApp(QWidget):
         self.curr_vid = None
         self.is_dragging = False
         self.worker = None 
+        self.video_dir = FACECAM_DIR
         self.init_ui()
         self.load_files()
 
@@ -368,7 +437,19 @@ class PlateApp(QWidget):
         
         btn_adm = QPushButton("PLAKA VERI GIRISI"); btn_adm.clicked.connect(self.open_admin); btn_adm.setFixedHeight(50); btn_adm.setObjectName("AdminBtn")
         left.addWidget(btn_adm)
-        left.addWidget(QLabel("CAMS/PlateCam KLASORU"))
+
+        btn_recs = QPushButton("KAYITLARI YONET"); btn_recs.clicked.connect(self.open_records); btn_recs.setFixedHeight(40); btn_recs.setStyleSheet("background-color: #555;")
+        left.addWidget(btn_recs)
+
+        # Klasör Seçimi
+        f_lay = QHBoxLayout()
+        self.lbl_path = QLabel("Varsayılan Klasör"); self.lbl_path.setStyleSheet("color:gray; font-size:10px;")
+        btn_dir = QPushButton("KLASÖR SEÇ"); btn_dir.clicked.connect(self.select_folder)
+        btn_dir.setStyleSheet("background-color:#444; font-size:11px; padding: 5px;")
+        f_lay.addWidget(btn_dir)
+        left.addLayout(f_lay); left.addWidget(self.lbl_path)
+
+        left.addWidget(QLabel("KAMERA / VIDEO LISTESI"))
         self.vlist = QListWidget(); self.vlist.setFixedWidth(260); self.vlist.itemClicked.connect(self.sel_vid); left.addWidget(self.vlist)
         btn_ref = QPushButton("Yenile"); btn_ref.clicked.connect(self.load_files); left.addWidget(btn_ref)
         self.log_box = QTextEdit(); self.log_box.setReadOnly(True); self.log_box.setFixedHeight(150); left.addWidget(self.log_box)
@@ -420,19 +501,26 @@ class PlateApp(QWidget):
 
         layout.addWidget(right_frame)
 
+    def select_folder(self):
+        d = QFileDialog.getExistingDirectory(self, "Video Klasörü Seç", self.video_dir)
+        if d:
+            self.video_dir = d
+            self.lbl_path.setText(os.path.basename(d))
+            self.load_files()
+
     def load_files(self):
         self.vlist.clear()
-        if not os.path.exists(FACECAM_DIR): os.makedirs(FACECAM_DIR)
+        if not os.path.exists(self.video_dir): os.makedirs(self.video_dir)
         valid_exts = ('.mp4', '.mov', '.avi', '.mkv', '.wmv')
-        fs = [f for f in os.listdir(FACECAM_DIR) if f.lower().endswith(valid_exts)]
+        fs = [f for f in os.listdir(self.video_dir) if f.lower().endswith(valid_exts)]
         if not fs: 
             self.log("VIDEO BULUNAMADI! Lutfen su klasore video atin:")
-            self.log(f"{FACECAM_DIR}")
+            self.log(f"{self.video_dir}")
         else:
             self.log(f"{len(fs)} video bulundu.")
             for f in fs: self.vlist.addItem(f)
 
-    def sel_vid(self, item): self.curr_vid = os.path.join(FACECAM_DIR, item.text()); self.btn_play.setEnabled(True)
+    def sel_vid(self, item): self.curr_vid = os.path.join(self.video_dir, item.text()); self.btn_play.setEnabled(True)
 
     def toggle(self):
         if not self.worker or not self.worker.isRunning():
@@ -467,6 +555,9 @@ class PlateApp(QWidget):
 
     def open_admin(self):
         if AdminDialog(self).exec(): self.log("Veritabani guncellendi.")
+
+    def open_records(self):
+        RecordsDialog(self).exec()
 
     def stop(self): 
         if self.worker: self.worker.kill()
