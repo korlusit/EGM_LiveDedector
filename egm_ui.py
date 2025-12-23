@@ -4,14 +4,23 @@ class Ui_MainWindow(object):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1280, 850)
         MainWindow.setStyleSheet("""
-/* --- MODERN KOYU TEMA --- */
+/* --- ULTRA MODERN DARK THEME --- */
 QMainWindow {
-    background-color: #2b2b2b;
+    background-color: #121212;
     color: #ffffff;
 }
 
-/* --- SOL SIDEBAR --- */
-    background-color: #1e1e1e;
+/* --- LOGO AREA --- */
+QLabel#labelImagePlace {
+    background-color: transparent;
+    border: none;
+}
+
+/* --- SIDEBAR FRAME --- */
+QFrame#sidebarFrame {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0 #1a1a1a, stop:1 #2d2d2d);
+    border-right: 1px solid #333333;
+}
     border-right: 1px solid #444444;
 }
 
@@ -198,7 +207,7 @@ QPushButton.colorBtn {
         self.sidebarLayout.setObjectName("sidebarLayout")
         self.labelImagePlace = QtWidgets.QLabel(parent=self.sidebarFrame)
         self.labelImagePlace.setMinimumSize(QtCore.QSize(0, 180))
-        self.labelImagePlace.setStyleSheet("border: 3px dashed #555555; background-color: #3d3d3d;")
+        self.labelImagePlace.setStyleSheet("background-color: transparent; border: none;")
         self.labelImagePlace.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.labelImagePlace.setObjectName("labelImagePlace")
         self.sidebarLayout.addWidget(self.labelImagePlace)
@@ -443,7 +452,7 @@ QPushButton.colorBtn {
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "EGM CANLI TAKİP"))
         self.labelImagePlace.setText(_translate("MainWindow", "RESİM ALANI"))
-        self.labelTitle.setText(_translate("MainWindow", "E.G.M UYGULAMA"))
+        self.labelTitle.setText(_translate("MainWindow", "EGM CANLI TAKİP"))
         self.btnAnaSayfa.setProperty("class", _translate("MainWindow", "sidebarBtn"))
         self.btnAnaSayfa.setText(_translate("MainWindow", "  Ana Ekran"))
         self.btnProfil.setProperty("class", _translate("MainWindow", "sidebarBtn"))
@@ -452,7 +461,7 @@ QPushButton.colorBtn {
         self.btnAdmin.setText(_translate("MainWindow", "  Admin Paneli"))
         self.btnAyarlar.setProperty("class", _translate("MainWindow", "sidebarBtn"))
         self.btnAyarlar.setText(_translate("MainWindow", "  Sistem Ayarları"))
-        self.labelVersion.setText(_translate("MainWindow", "v3.0.1 Secure Build"))
+        self.labelVersion.setText(_translate("MainWindow", ""))
         self.label_2.setProperty("class", _translate("MainWindow", "pageHeader"))
         self.label_2.setText(_translate("MainWindow", "Uygulama Merkezi"))
         self.cardPTS.setProperty("class", _translate("MainWindow", "cardFrame"))

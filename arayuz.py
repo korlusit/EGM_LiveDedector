@@ -13,6 +13,17 @@ class EGMSistem(QtWidgets.QMainWindow):
         self.ui.label_5.setText("YÜZ TANIMA SİSTEMİ (GBT)")
         self.ui.cardTutanak.hide()
         self.setWindowTitle("EGM CANLI TAKİP")
+        self.setWindowIcon(QtGui.QIcon("logo.png"))
+        
+        # LOGO YUKLEME
+        logo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logo.png")
+        if os.path.exists(logo_path):
+            pixmap = QtGui.QPixmap(logo_path)
+            self.ui.labelImagePlace.setPixmap(pixmap.scaled(150, 150, QtCore.Qt.AspectRatioMode.KeepAspectRatio, QtCore.Qt.TransformationMode.SmoothTransformation))
+            self.ui.labelImagePlace.setText("") # Resmi gosterince yaziyi sil
+            self.ui.labelImagePlace.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        else:
+             print(f"Logo bulunamadı: {logo_path}")
         display_name = user_name
         if "_" in user_name:
             parts = user_name.split("_")

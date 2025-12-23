@@ -209,6 +209,7 @@ class AdminApp(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("EGM CANLI TAKİP")
+        self.setWindowIcon(QIcon("logo.png"))
         self.setStyleSheet(PROFESSIONAL_THEME)
         self.resize(1100, 700)
         self.available_cams = self.check_cameras()

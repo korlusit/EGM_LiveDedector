@@ -1,10 +1,7 @@
 import sys
 import cv2
 import os
-import shutil
-import sqlite3
-import numpy as np
-import random
+# sqlite3, shutil, random removed
 import unicodedata
 import onnxruntime
 from insightface.app import FaceAnalysis
@@ -19,7 +16,7 @@ from PyQt6.QtGui import QImage, QPixmap, QIcon, QImageReader
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QMutex, QSize
 SIMILARITY_THRESHOLD = 0.45
 DET_SIZE = (640, 640)
-DB_PATH = "unified_egm.db"
+# DB_PATH removed
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FACECAM_DIR = os.path.join(BASE_DIR, "CAMS", "FaceCam")
 if not os.path.exists(FACECAM_DIR): os.makedirs(FACECAM_DIR)
@@ -248,6 +245,7 @@ class GBTApp(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("EGM CANLI TAKİP")
+        self.setWindowIcon(QIcon("logo.png"))
         self.resize(1500, 950)
         self.setStyleSheet(PROFESSIONAL_THEME)
         self.curr_vid = None

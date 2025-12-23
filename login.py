@@ -168,6 +168,7 @@ class LoginApp(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("EGM CANLI TAKİP")
+        self.setWindowIcon(QtGui.QIcon("logo.png"))
         self.setStyleSheet(PROFESSIONAL_THEME)
         self.resize(900, 750)
         self.worker = None

@@ -1,8 +1,7 @@
 import sys
 import cv2
 import os
-import shutil
-import sqlite3
+# sqlite3, shutil removed
 import numpy as np
 import time
 import re
@@ -23,7 +22,7 @@ import easyocr
 CONFIDENCE_YOLO = 0.50
 SIMILARITY_THRESHOLD = 0.80
 DET_SIZE = (640, 640)
-DB_PATH = "unified_egm.db"
+# DB_PATH removed
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FACECAM_DIR = os.path.join(BASE_DIR, "CAMS", "PlateCam") 
 SNAPSHOTS_DIR = os.path.join(BASE_DIR, "CAMS", "Snapshots")
@@ -228,6 +227,7 @@ class PlateApp(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("EGM CANLI TAKİP")
+        self.setWindowIcon(QIcon("logo.png"))
         self.resize(1500, 950)
         self.setStyleSheet(PROFESSIONAL_THEME)
         self.curr_vid = None
